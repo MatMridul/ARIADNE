@@ -191,20 +191,30 @@ number — it is an explicit **risk-appetite dial** swept by the evaluation (§7
 
 ## 8. Open questions / UNKNOWNs
 
-1. **Attribution scoring function — exact form.** The idea (shared-cause explains
-   the failure pattern better than independent faults) is fixed; the precise math
-   (e.g. likelihood-style ratio vs. a simpler coverage score) is a build-spec
-   decision and should be the simplest thing that cleanly separates incident A
-   from incident B. **Deferred to BUILD_SPEC + a DR.**
-2. **Baseline's own decision rule.** The baseline detects and attributes per-node;
-   does it also *act* (so we compare recovery head-to-head), or only diagnose (so
-   we compare diagnosis quality)? Recommendation: it acts too, using the same
-   action menu but driven by its per-node view — that makes the money-recovered
-   comparison apples-to-apples. **Confirm in review.**
-3. **How many PSPs / banks / methods in v1.** Enough for the shared-bank case to
-   be non-trivial (≥2 PSPs sharing ≥1 bank) but no more than needed. Proposed:
-   3 methods, 3 PSPs, 2–3 banks with at least one shared. **Confirm.**
+> **Status note (updated after DR-001 + hostile review).** Questions 1–3 below were
+> RESOLVED during the decision-record and hardening work; they are recorded here as
+> closed with pointers, so this section stays honest rather than stale. Only 4 and 5
+> remain open, and both are build-time *tuning* choices (pick sensible values,
+> document them) — neither is an architecture decision that should stall the build.
+
+1. **Attribution scoring function — exact form. RESOLVED (ARIADNE DR-001, Accepted;
+   BUILD_SPEC §3.8).** Pinned to `confidence = coverage × specificity`, blame the
+   bank when `coverage == 1.0` and `specificity ≥ S_MIN` (start 0.8), else
+   independent PSPs / method / none. This is what separates incident A from the
+   coincidental incident E.
+2. **Baseline's own decision rule. RESOLVED (ARIADNE DR-001, decision C1).** The
+   baseline also *acts*, using the same action menu driven by its per-node view, so
+   money-recovered is an apples-to-apples head-to-head. It receives identical raw
+   observations; it only lacks the graph.
+3. **How many PSPs / banks / methods in v1. RESOLVED (ARIADNE DR-001, decision
+   A1).** 3 methods, 3 PSPs, 2 banks — bank_A shared by PSP-1 & PSP-2, bank_B on
+   PSP-3. Residual-risk note (in DR-001): if this proves too small to make the win
+   non-trivial once measured, revisit via a new superseding DR.
 4. **Batch size & incident mix for the headline "money recovered across a batch"
-   number.** Deferred to BUILD_SPEC.
+   number. OPEN — build-time tuning.** Pick a reproducible batch that exercises all
+   five incident types (A/B/C/D/E) plus clean windows; document the chosen counts.
+   Not architecture — no DR needed unless the choice changes what is being proven.
 5. **Simulator noise model specifics** (base success rates per method, noise
-   distribution). Deferred to BUILD_SPEC; must be documented so results reproduce.
+   distribution, severity/onset ranges). **OPEN — build-time tuning.** Choose
+   realistic values with severities overlapping the noise band (per BUILD_SPEC
+   §3.5), and document them so runs reproduce. Not architecture — no DR needed.
