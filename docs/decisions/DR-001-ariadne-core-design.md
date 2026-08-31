@@ -7,10 +7,10 @@
 > reusable principle graduates back into the ATLAS class?"* Keep the two separate:
 > instantiation choices live here; class principles live in the ATLAS repo.
 
-- **Status:** Proposed
-- **Status history:** Proposed 2026-08-31
+- **Status:** Accepted
+- **Status history:** Proposed 2026-08-31 → Accepted 2026-08-31
 - **Date proposed:** 2026-08-31
-- **Date resolved:** _pending_
+- **Date resolved:** 2026-08-31
 - **Supersedes / Superseded by:** —
 
 ## Question
@@ -124,16 +124,75 @@ developed and reviewed as adversaries, or the discrimination result is circular.
 
 ## External Challenge
 
-_pending — to be filled after independent (ChatGPT / reviewer) challenge._
+The independent reviewer (ChatGPT) reviewed the ARIADNE-level decisions together
+with the five hardening revisions proposed after Kiro's internal hostile review.
+Recorded honestly — what it actually engaged, and what it did not:
+
+- **Attribution formula (decision b):** explicitly endorsed. The reviewer said to
+  keep the pinned `confidence = coverage × specificity` form (with `coverage = 1.0`
+  and `specificity ≥ S_MIN = 0.8`) *unless a revision exposed an internal
+  inconsistency*, and specifically warned against replacing it with a more
+  sophisticated model — the point being to remove build-time judgment while keeping
+  v1 minimal. No inconsistency was found in the consistency pass.
+- **Acting baseline (decision c):** accepted implicitly. The reviewer's
+  counterfactual-integrity constraint (compare action vs. no-action under the same
+  stochastic realization) presupposes that *both* systems act and are compared on
+  realized money-recovered — i.e. it took the acting baseline as given rather than
+  contesting it.
+- **Graph size / triviality (decision a):** **NOT directly attacked.** The reviewer
+  did not challenge whether the 3/3/2 topology makes the shared-bank win trivial,
+  nor the circularity worry that the scoring rule could mirror the injection rule
+  (the DR's own Strongest Argument Against). It neither endorsed nor refuted that
+  specific doubt.
+- **Process constraints:** the reviewer required information parity (identical raw
+  per-PSP/per-method inputs; bank health derived, never supplied), shared-seed
+  counterfactual integrity, an explicit no-cross-incident-learning invariant, DR
+  Pass-1 immutability, and preservation of the ARIADNE-vs-ATLAS layer distinction.
+
+This was a genuine independent review of the decisions and their hardening — it was
+NOT a full re-derivation or line-by-line re-attack of every argument in the DR, and
+this Resolution does not claim it was.
 
 ## Resolution
 
-_pending._
+The Proposed Decision (**A1 + B1 + C1**) survives unchanged. Nothing in the
+challenge moved any of the three choices:
+
+- The pinned attribution formula stays exactly as proposed (endorsed).
+- The acting baseline stays (implicitly accepted).
+- The 3/3/2 graph size stays.
+
+On the one point the challenge did **not** press — the graph-size / "grading its
+own homework" doubt in the Strongest Argument Against — the residual risk is
+**mitigated, not dissolved**, by the coincidental incident **E** (two PSPs on
+different banks failing together, where the correct answer is two independent
+faults). A rule that merely counts correlated failures fails E; only genuine
+topology reasoning passes both A and E. The scoring rule and the incident-injection
+rule are to be built as adversaries, and the A-vs-E contrast is the falsification
+guard. This is recorded as a residual risk to watch at eval time, not as a fully
+closed concern: if, once built, ARIADNE's advantage on A does not survive the
+presence of E (or the 3/3/2 signal proves trivially separable), that is grounds to
+revisit graph size — which, being an implementation finding against this decision's
+*foundation*, would open a new superseding DR rather than silently edit this one.
 
 ## Decision
 
-_pending._ — **Accepted / Rejected / Deferred.**
+**Accepted.** A1 (3/3/2 shared-bank topology) + B1 (`coverage × specificity`,
+`S_MIN = 0.8`) + C1 (fair acting baseline), with incident E as the standing
+anti-triviality control and a residual-risk note on graph size.
 
 ## Consequences
 
-_pending._
+- **Enables** the build: `default_graph()` = 3/3/2, `attribute()` uses the pinned
+  formula, the baseline acts, and the eval must include incident E. These are now
+  fixed inputs to `BUILD_SPEC.md` / `BUILD_ORDER.md` — the build session implements
+  them, it does not re-decide them.
+- **Constrains** the honesty story: the discrimination claim now rests on the A-vs-E
+  contrast, not on A alone. Eval reporting must show E results alongside A.
+- **Leaves open** (separately): whether the discrimination test should become a
+  *class-level* ATLAS requirement — that is ATLAS DR-001, still Proposed and
+  awaiting its own dedicated external challenge. ARIADNE's acceptance here does NOT
+  ratify the class-level generalization.
+- **Watch item:** if graph size proves too small to make the win non-trivial once
+  measured, revisit via a new superseding DR (foundation-level change), per the
+  reversal-vs-supersession rule.
