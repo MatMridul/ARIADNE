@@ -53,6 +53,8 @@ import struct as _struct
 
 _SEV_MIN = 0.02   # overlaps noise band (noise_std ~0.01) -> ambiguous low end
 _SEV_MAX = 0.35   # a clear, severe drop at the high end
+_MIN_ONSET = 3  # incidents never start before this window: a rolling baseline
+                 # needs some clean history first (documented; not a per-incident tell)
 _MIN_DURATION = 2
 _MAX_DURATION = 5
 
@@ -67,9 +69,10 @@ def _window_span(seed: int, n_windows: int, tag: str) -> tuple[int, int]:
     duration = _MIN_DURATION + int(
         _draw(seed, tag, "dur") * (_MAX_DURATION - _MIN_DURATION + 1)
     )
-    duration = min(duration, n_windows)
-    latest_start = max(0, n_windows - duration)
-    start = int(_draw(seed, tag, "start") * (latest_start + 1))
+    duration = min(duration, n_windows - _MIN_ONSET)
+    earliest = _MIN_ONSET
+    latest_start = max(earliest, n_windows - duration)
+    start = earliest + int(_draw(seed, tag, "start") * (latest_start - earliest + 1))
     return start, start + duration - 1
 
 

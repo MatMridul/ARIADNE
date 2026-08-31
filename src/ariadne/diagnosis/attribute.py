@@ -65,11 +65,26 @@ def attribute(
 ) -> Attribution:
     down = set(detection.dropped_nodes)
     if not down:
+        # no PSP breached -> a pure method-level fault can still be present, since a
+        # single method's drop dilutes across each PSP's mixed traffic. Inspect the
+        # method view directly (still no ground truth).
+        method_cause = _method_cause(stats)
+        if method_cause is not None:
+            m_id, m_delta = method_cause
+            return Attribution(
+                root_cause_id=m_id,
+                root_cause_kind="method",
+                confidence=min(1.0, abs(m_delta) / 0.3),
+                evidence_path=[
+                    f"method {m_id} delta={m_delta:.3f}; no single PSP breached",
+                    "attributing to the method, not a PSP or bank",
+                ],
+            )
         return Attribution(
             root_cause_id="",
             root_cause_kind="none",
             confidence=0.0,
-            evidence_path=["no PSP breached the detection threshold"],
+            evidence_path=["no PSP or method breached the detection threshold"],
         )
 
     # --- candidate shared-bank explanation --------------------------------

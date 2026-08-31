@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ariadne.decide.actions import Action
-from ariadne.decide.policy import apply_action
+from ariadne.decide.policy import apply_action, apply_action_config
 from ariadne.model.entities import Transaction
 from ariadne.model.graph import PaymentGraph
 from ariadne.simulator.config import SimConfig
@@ -36,7 +36,8 @@ def money_recovered(
     config differs (no-action = base_graph, action = post-action graph)."""
     no_action_txns, _ = generate(base_graph, cfg, incident)
     action_graph = apply_action(base_graph, action)
-    action_txns, _ = generate(action_graph, cfg, incident)
+    action_cfg = apply_action_config(cfg, action)
+    action_txns, _ = generate(action_graph, action_cfg, incident)
     return captured_revenue(action_txns) - captured_revenue(no_action_txns)
 
 

@@ -25,6 +25,14 @@ def _psp_by_id(stats: dict[str, NodeStats]) -> dict[str, NodeStats]:
     return {s.node_id: s for s in stats.values() if s.node_kind == "psp"}
 
 
+def _method_by_id(stats: dict[str, NodeStats]) -> dict[str, NodeStats]:
+    return {s.node_id: s for s in stats.values() if s.node_kind == "method"}
+
+
+def _active_methods(graph: PaymentGraph) -> list[Method]:
+    return [m for m in graph.routing if any(w > 0.0 for _p, w in graph.routing[m])]
+
+
 def _healthy_targets(
     stats: dict[str, NodeStats], graph: PaymentGraph, avoid: set[str]
 ) -> list[str]:
@@ -75,6 +83,28 @@ def select_action(
             if attr.root_cause_kind != "none"
             else "no cause diagnosed",
             confidence=attr.confidence,
+        )
+
+    # Tier-2: method-level cause -> retry retriable failures on that method.
+    if attr.root_cause_kind == "method":
+        m = Method(attr.root_cause_id)
+        active = _active_methods(graph)
+        m_stats = _method_by_id(stats).get(attr.root_cause_id)
+        rate = m_stats.success_rate if m_stats else 1.0
+        # if the method is severely down and a fallback method exists, disable it;
+        # else retry its retriable failures (the safer, additive action).
+        if rate < 0.5 and len(active) > 1:
+            return A.disable_method(
+                graph, m, active,
+                confidence=attr.confidence,
+                expected_recovery=0.0,
+                evidence_path=attr.evidence_path + [f"disable severely-down method {m.value}"],
+            )
+        return A.retry_fallback(
+            m, max_retries=2, retriable_codes=["GATEWAY_TIMEOUT", "BANK_DECLINE"],
+            confidence=attr.confidence,
+            expected_recovery=(m_stats.volume * (1 - rate) * 0.5 * avg_amount) if m_stats else 0.0,
+            evidence_path=attr.evidence_path + [f"retry retriable failures on method {m.value}"],
         )
 
     bad = _bad_psps(attr, graph)
@@ -138,3 +168,18 @@ def apply_action(graph: PaymentGraph, action: Action) -> PaymentGraph:
         )
     # retry_fallback is additive (modeled in metrics), no graph change
     return graph
+
+
+def apply_action_config(cfg, action: "Action"):
+    """Return a SimConfig reflecting a Tier-2 action that changes runtime behaviour
+    rather than routing (retry_fallback). do_nothing/reroute/disable_method leave the
+    config unchanged (their effect is a graph change, handled by apply_action)."""
+    from dataclasses import replace
+    if action.kind == "retry_fallback":
+        return replace(
+            cfg,
+            retry_method=action.params["method"],
+            retry_codes=tuple(action.params["retriable_codes"]),
+            retry_max=action.params["max_retries"],
+        )
+    return cfg

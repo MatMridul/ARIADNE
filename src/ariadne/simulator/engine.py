@@ -167,9 +167,21 @@ def generate(
 
             success = r_success < rate
             latency = cfg.base_latency_ms * (1.0 + r_latency)
+            failure_code = None if success else _failure_code(m, drop)
+
+            # Tier-2 retry_fallback: retry retriable failures on the target method,
+            # bounded, using fresh draws from the same txn RNG (deterministic).
+            if (not success and cfg.retry_max > 0
+                    and cfg.retry_method == m.value
+                    and failure_code in cfg.retry_codes):
+                for _attempt in range(cfg.retry_max):
+                    latency += cfg.base_latency_ms  # each retry adds latency
+                    if rng.random() < rate:
+                        success = True
+                        failure_code = None
+                        break
             if not success:
                 latency *= 1.5  # failures tend to be slower
-            failure_code = None if success else _failure_code(m, drop)
 
             txns.append(
                 Transaction(

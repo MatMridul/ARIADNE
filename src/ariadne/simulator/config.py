@@ -27,6 +27,14 @@ class SimConfig:
     avg_amount: float = 1000.0     # rupees; mean transaction value
     base_latency_ms: float = 120.0
 
+    # Tier-2 retry policy (set by a retry_fallback action for the counterfactual).
+    # When active, a failed transaction on `retry_method` whose failure_code is in
+    # `retry_codes` gets `retry_max` extra independent attempts at the SAME effective
+    # rate; it succeeds if any attempt succeeds. Deterministic (draws from the txn RNG).
+    retry_method: str | None = None
+    retry_codes: tuple[str, ...] = ()
+    retry_max: int = 0
+
     # Per-cohort multiplicative offsets on the base success rate, so a naive
     # "everything dropped" reading is wrong (BUILD_SPEC §3.5). Small, bounded.
     def cohort_offset(self, cohort: str) -> float:
