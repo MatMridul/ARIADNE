@@ -1,9 +1,10 @@
 """The evaluation harness (BUILD_SPEC §3.14).
 
 ``run_once`` drives the full thin loop for ONE incident scenario at ONE
-threshold: simulate → aggregate → detect → attribute (ARIADNE) OR
-baseline_attribute (baseline) → select_action → re-simulate the affected windows
-under the action's changed config (SAME seed) → score against GroundTruth.
+threshold (scoring delegated to ``sweep.run_scenario``). ``run_sweep`` runs BOTH
+systems across seeds × thresholds and returns the Shared Dependency
+Discrimination result plus the recovery-vs-risk frontier (batch driving and
+frontier aggregation live in ``eval/sweep.py`` to keep modules small).
 
 ``discrimination_result`` runs BOTH systems on incidents A, B and E and reports,
 honestly, whether ARIADNE beats the baseline on A, does not regress on B, and
@@ -15,26 +16,18 @@ This is the ONLY place GroundTruth is read (BUILD_SPEC §1 rule 3). ``diagnosis/
 """
 
 from ..baseline.independent import baseline_attribute
-from ..decide.policy import select_action
 from ..diagnosis.attribute import Attribution, attribute
 from ..diagnosis.detect import detect
-from ..model.entities import Method
 from ..model.graph import PaymentGraph, default_graph
 from ..observe.aggregate import window_stats
 from ..simulator.config import SimConfig
 from ..simulator.engine import generate
 from ..simulator.incidents import Incident, IncidentType
-from .metrics import (
-    RunMetrics,
-    do_nothing_correct_rate,
-    false_intervention_cost,
-    money_recovered,
-)
+from .metrics import RunMetrics
+from .sweep import build_frontier, run_scenario
 
-# Detection sensitivity for the thin loop (delta below −threshold = "dropped").
+# Detection sensitivity for diagnosis (delta below −threshold = "dropped").
 _DETECT_THRESHOLD = 0.05
-# Nominal cost charged for a false intervention (acting with no real cause).
-_FALSE_INTERVENTION_COST = 1000.0
 
 
 def _incident_a(graph: PaymentGraph) -> Incident:
@@ -111,62 +104,41 @@ def _diagnose(
     raise ValueError(f"unknown system {system!r} (expected 'ariadne' or 'baseline')")
 
 
-def _apply_action(graph: PaymentGraph, action) -> PaymentGraph:
-    """Return the graph as changed by the chosen action (reroute), else unchanged."""
-    if action.kind == "reroute":
-        p = action.params
-        return graph.reroute(Method(p["method"]), p["from_psp"], p["to_psp"])
-    return graph
-
-
 def run_once(
     system: str,
     intervention_threshold: float,
     seed: int,
     incident_key: str = "A",
 ) -> RunMetrics:
-    """Drive the full loop for one incident scenario.
+    """Drive the full loop for one incident scenario and score the full RunMetrics.
 
     ``system`` in {"ariadne", "baseline"}; both act via the SAME decide/policy
     menu (DR-001 C1) so the money-recovered comparison is apples-to-apples.
     ``incident_key`` selects the scenario (A shared-bank, B single-PSP,
-    E coincidental)."""
-    graph = default_graph()
-    cfg = SimConfig(seed=seed)
-    incident = _INCIDENTS[incident_key](graph)
+    E coincidental). Scoring is delegated to ``sweep.run_scenario`` so the thin
+    loop and the batch use one identical pipeline."""
+    incident = _INCIDENTS[incident_key](default_graph())
+    return run_scenario(system, intervention_threshold, incident, SimConfig(seed=seed))
 
-    # 1) simulate + read ground truth (eval-only).
-    no_action_txns, gt = generate(graph, cfg, incident)
-    affected = range(incident.start_window, incident.end_window + 1)
 
-    # 2) aggregate the first affected window, then detect.
-    stats = window_stats(no_action_txns, graph, incident.start_window)
-    detection = detect(stats, _DETECT_THRESHOLD, window=incident.start_window)
+def run_sweep(
+    seeds: list[int],
+    thresholds: tuple[float, ...] = (0.55, 0.70, 0.85),
+) -> dict:
+    """Run BOTH systems across all ``thresholds`` and ``seeds`` (BUILD_SPEC §3.14).
 
-    # 3) diagnose (no ground truth here) — ARIADNE (relational) or baseline.
-    attr = _diagnose(system, stats, graph, detection)
-
-    # 4) decide (same menu for both systems).
-    action = select_action(attr, graph, stats, intervention_threshold)
-    acted = action.kind != "do_nothing"
-
-    # 5) re-simulate the SAME incident under the changed config, SAME seed.
-    action_graph = _apply_action(graph, action)
-    action_txns, _ = generate(action_graph, cfg, incident)
-
-    # 6) score. money_recovered is the shared-seed counterfactual; negatives kept.
-    recovered = money_recovered(action_txns, no_action_txns, affected)
-    had_cause = bool(gt.true_causes)
-    return RunMetrics(
-        money_recovered=recovered,
-        false_intervention_cost=false_intervention_cost(
-            acted, had_cause, _FALSE_INTERVENTION_COST
-        ),
-        do_nothing_correct_rate=do_nothing_correct_rate(acted, had_cause),
-        root_cause_accuracy=1.0
-        if attr.root_cause_id in gt.true_causes
-        else 0.0,
-    )
+    Returns a dict with:
+      * ``discrimination`` — the Shared Dependency Discrimination result on the
+        first seed (ARIADNE vs baseline on A/B/E), reported honestly.
+      * ``frontier`` — the recovery-vs-false-intervention-cost frontier per system,
+        one point per threshold (fed to ``reporting/frontier.py``).
+    """
+    return {
+        "seeds": list(seeds),
+        "thresholds": list(thresholds),
+        "discrimination": discrimination_result(seeds[0]),
+        "frontier": build_frontier(list(seeds), tuple(thresholds)),
+    }
 
 
 def _attribution_for(system: str, incident_key: str, seed: int) -> tuple:
