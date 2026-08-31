@@ -25,8 +25,10 @@
    `Incident` + `GroundTruth`), `simulator/engine.py` (`generate`).
 6. `tests/test_simulator.py` — same seed → identical txns; a SHARED_BANK incident
    lowers success across ALL PSPs on the target bank and nowhere else; incident D
-   injects noise only. **Verify GroundTruth is returned separately, not embedded in
-   the transaction stream the reasoner reads.**
+   injects noise only; a COINCIDENTAL (E) incident drops two PSPs on DIFFERENT
+   banks independently; onset/duration/severity are randomized per seed. **Verify
+   GroundTruth is returned separately, not embedded in the transaction stream the
+   reasoner reads.**
 
 ## Phase 3 — observation
 7. `observe/aggregate.py` — `NodeStats` + `window_stats` (per-PSP, per-method).
@@ -35,27 +37,33 @@
 ## Phase 4 — the thin end-to-end loop (ONE incident, ONE action, ONE metric)
 9. `diagnosis/detect.py` (`detect`).
 10. `diagnosis/attribute.py` (`attribute`) — the shared-vs-independent scoring
-    (DR-001 B1). **Import nothing from `simulator/incidents.py`.**
+    (DR-001 B1: `confidence = coverage × specificity`, `S_MIN = 0.8`).
+    **Import nothing from `simulator/incidents.py`.** Diagnose from THIS window's
+    observations only — keep no state across incidents (BUILD_SPEC §1 rule 7).
 11. `decide/actions.py` (`reroute`, `do_nothing` only for now) + `decide/policy.py`
     (`select_action` with the intervention threshold).
 12. `eval/metrics.py` (start with `money_recovered`, `false_intervention_cost`,
     `do_nothing_correct_rate`) + a minimal `eval/run.py:run_once` for ONE incident-A
-    scenario at ONE threshold.
+    scenario at ONE threshold. **`money_recovered` uses the shared-seed
+    counterfactual** (action vs. no-action under the SAME seed/draws — BUILD_SPEC §3.13).
 13. Prove the thin loop runs end to end on incident A and produces a money-recovered
     number. **Checkpoint: the loop works before widening.**
-14. `tests/test_attribute.py` (bank / psp / none), `tests/test_policy.py`
-    (below-threshold → do_nothing; never disable last method; never reroute onto a
-    bad node), `tests/test_metrics.py`.
+14. `tests/test_attribute.py` (bank / psp / none / **coincidental-E → two
+    independent PSPs, not a bank**), `tests/test_policy.py` (below-threshold →
+    do_nothing; never disable last method; never reroute onto a bad node),
+    `tests/test_metrics.py`.
 
 ## Phase 5 — the fair baseline + the discrimination result
 15. `baseline/independent.py` — same stats, no graph, blames each node itself.
 16. `tests/test_baseline.py` — on the shared-bank window the baseline returns
-    multiple independent PSP faults, never a bank (proves the gap exists).
+    multiple independent PSP faults, never a bank (proves the gap exists); on the
+    coincidental (E) window the baseline is correct (independent PSPs).
 17. Extend `eval/run.py` to run BOTH systems and produce the discrimination result:
-    ARIADNE beats baseline on incident A, does not regress on B.
+    ARIADNE beats baseline on incident A, does not regress on B, and does not
+    over-attribute on E (the A-vs-E contrast isolates ARIADNE's real advantage).
 
 ## Phase 6 — widen to the full batch + frontier
-18. `eval/scenarios.py` — the batch mixing A/B/C/D + clean windows.
+18. `eval/scenarios.py` — the batch mixing A/B/C/D/E + clean windows.
 19. `eval/run.py:run_sweep` across seeds × thresholds (0.55/0.70/0.85).
 20. `reporting/frontier.py` — plot recovery vs. false-intervention cost, both series.
 21. `tests/test_run.py` — sweep produces the A-improvement + B-no-regression result

@@ -23,6 +23,14 @@ ARIADNE must show **measurable improvement over the baseline on this scenario**,
 and must **not regress** on the single-PSP control scenario (where blaming the one
 PSP is correct and inventing a shared cause would be wrong).
 
+**The anti-cheat control — coincidental failures (incident E).** Two PSPs on
+*different* banks can drop at the same time by pure chance. The correct answer then
+is two *independent* faults, NOT a shared cause. A system that merely counts
+correlated failures would wrongly cry "shared cause"; only real topology reasoning
+gets both the shared-bank case (A) and the coincidental case (E) right. ARIADNE
+must NOT over-attribute to a bank on E. The A-vs-E contrast is what proves the
+graph reasons rather than counts.
+
 ## Both outcomes are wins for engineering knowledge
 
 - **ARIADNE beats the baseline on the shared-bank case** → the map mattered.

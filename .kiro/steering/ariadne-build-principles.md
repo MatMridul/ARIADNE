@@ -35,6 +35,13 @@ such decision, cut it and note why. Complexity must earn its place.
    If a value is unknown, represent it as unknown / low-confidence — never a guess
    dressed as a fact.
 
+6. **No cross-incident learning (v1 invariant).** Diagnose each incident from ITS
+   OWN observation window only. The diagnoser keeps no state across incidents and
+   never adapts from a past incident's outcome — nothing about how one incident
+   resolved may influence diagnosis, action selection, or evaluation of the next.
+   This closes the "feedback loop teaches itself the answer" hole. (Learning /
+   adaptation is Tier 3, out of scope — see `docs/SCOPE.md`.)
+
 ## The honesty guards (do not weaken these to get a nicer result)
 
 - The evaluation is written **before** we know whether ARIADNE beats the baseline.
