@@ -57,14 +57,45 @@ class RunMetrics:
 
 
 def root_cause_hit(gt: GroundTruth, blamed_ids: list[str]) -> bool:
-    """Did the diagnosis name the right cause(s)?
-    A/B/C: the single true node must be blamed. E: BOTH independent PSPs must be
-    blamed and no bank. D: nothing blamed."""
+    """Whole-incident scoring (used in unit fixtures). A/B/C: the single true node
+    must be blamed. E: BOTH independent PSPs must be blamed and no bank. D: nothing."""
     true = set(gt.true_causes)
     blamed = set(blamed_ids)
     if not true:  # incident D: correct iff nothing was blamed
         return not blamed
     return blamed == true
+
+
+def active_true_causes(gt: GroundTruth, window: int) -> set[str]:
+    """The true cause(s) actually active in THIS window (eval-side; reads ground
+    truth). For E the two independent faults have their own onset windows, so a
+    single window has at most one of them active -- scoring must reflect that."""
+    inc = gt.incident
+    it = inc.incident_type
+    if it == IncidentType.NONE:
+        return set()
+    active: set[str] = set()
+    if it == IncidentType.COINCIDENTAL:
+        if inc.start_window <= window <= inc.end_window and inc.target_id:
+            active.add(inc.target_id)
+        if inc.secondary_start_window <= window <= inc.secondary_end_window and inc.secondary_target_id:
+            active.add(inc.secondary_target_id)
+        return active
+    # A/B/C: single fault span
+    if inc.start_window <= window <= inc.end_window:
+        return set(gt.true_causes)
+    return set()
+
+
+def root_cause_hit_window(gt: GroundTruth, blamed_ids: list[str], window: int) -> bool:
+    """Window-aware RCA: a hit iff the blamed set matches exactly the causes active
+    in this window. This correctly rewards ARIADNE for naming the right node while
+    penalising over-attribution (e.g. blaming a bank on incident E)."""
+    active = active_true_causes(gt, window)
+    blamed = set(blamed_ids)
+    if not active:  # window has no active cause -> correct iff nothing blamed
+        return not blamed
+    return blamed == active
 
 
 def is_no_cause(gt: GroundTruth) -> bool:
