@@ -1,5 +1,5 @@
 """Phase 6 — sweep produces the discrimination result + a frontier (BUILD_SPEC §5)."""
-from ariadne.eval.run import run_sweep
+from ariadne.eval.sweep import run_sweep
 
 
 def test_sweep_produces_a_point_per_threshold_per_system():
