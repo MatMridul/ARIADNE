@@ -66,6 +66,56 @@ def test_run_sweep_frontier_one_point_per_threshold_per_system():
             assert "false_intervention_cost" in p
 
 
+# A threshold set that BRACKETS the real PSP/method confidence distribution the
+# pipeline actually produces (~0.08-0.44 for independent-PSP / method faults; 1.0
+# for a shared-bank fault; 0.0 for no-cause). The documented default
+# (0.55/0.70/0.85) sits in the empty gap between the PSP cluster and the bank
+# point, so it cannot move the dial; this set lands INSIDE the PSP cluster so the
+# operating point genuinely changes across thresholds. It is used only to prove
+# the frontier is a real trade-off curve, not to tune any ARIADNE win.
+_BRACKETING_THRESHOLDS = (0.20, 0.35, 0.50)
+
+
+def test_frontier_moves_across_bracketing_thresholds():
+    """The risk-appetite dial must actually move: with a threshold set that
+    brackets the confidence distribution the pipeline really produces, at least
+    one system's operating point (money recovered / do-nothing rate) must change
+    across thresholds. This guards against a silently degenerate single-point
+    frontier (review issue 2)."""
+    sweep = run_sweep(_SEEDS, thresholds=_BRACKETING_THRESHOLDS)
+    frontier = sweep["frontier"]
+    # For each system, a higher threshold => more conservative: money recovered
+    # (and the overall decision-correctness rate) is non-increasing as the system
+    # holds more cause-bearing scenarios at low confidence.
+    for system in ("ariadne", "baseline"):
+        monies = [p["money_recovered"] for p in frontier[system]]
+        decisions = [p["decision_correct_rate"] for p in frontier[system]]
+        # the points are genuinely distinct (not a collapsed single operating point)
+        assert len(set(monies)) > 1, (system, monies)
+        # holding more as the bar rises: recovery is monotonically non-increasing
+        assert monies == sorted(monies, reverse=True), (system, monies)
+        # the overall decision-correctness dial also moves and is non-increasing
+        assert len(set(decisions)) > 1, (system, decisions)
+        assert decisions == sorted(decisions, reverse=True), (system, decisions)
+        # the incident-D safety headline (do_nothing_correct_rate) stays a clean
+        # 1.0 at every threshold: no-cause windows have confidence 0 so the system
+        # correctly HOLDS on them regardless of the dial. This is the isolated,
+        # un-diluted headline (review issue 3) — not the metric that trades off.
+        assert all(p["do_nothing_correct_rate"] == 1.0 for p in frontier[system])
+
+
+def test_default_thresholds_documented_frontier_is_reported_honestly():
+    """The DOCUMENTED default thresholds (the spec's example) are left intact. On
+    this real pipeline their confidence band sits in the gap between the PSP and
+    bank clusters, so the three points coincide — that is reported honestly rather
+    than tuned away (see test_frontier_moves_across_bracketing_thresholds for the
+    set that exercises the trade-off)."""
+    sweep = run_sweep(_SEEDS, thresholds=_THRESHOLDS)
+    for system in ("ariadne", "baseline"):
+        points = sweep["frontier"][system]
+        assert len(points) == len(_THRESHOLDS)
+
+
 def test_run_sweep_ariadne_recovers_more_than_baseline_on_batch():
     """The batch-level payoff of the discrimination gap: ARIADNE recovers strictly
     more money than the baseline (which cannot name the shared bank on A)."""

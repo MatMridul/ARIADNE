@@ -31,7 +31,14 @@ class RunMetrics:
     expected_vs_realized_gap: float = 0.0
     false_intervention_cost: float = 0.0  # acted when it shouldn't have
     unsafe_action_rate: float = 0.0
-    do_nothing_correct_rate: float = 0.0  # headline safety number (incident D)
+    # Headline incident-D safety number: correctly HELD on a no-cause window.
+    # NaN on a cause-bearing scenario (this metric is undefined there — see
+    # do_nothing_correct_rate below), so batch aggregation counts only no-cause
+    # scenarios and the number is not diluted by correct-act cases.
+    do_nothing_correct_rate: float = 0.0
+    # Overall decision correctness (held-on-no-cause OR acted-on-cause). Kept
+    # SEPARATE so the incident-D headline above stays clean.
+    decision_correct_rate: float = 0.0
 
 
 def captured_revenue(txns: list[Transaction], windows: range | None = None) -> float:
@@ -66,9 +73,28 @@ def false_intervention_cost(acted: bool, had_real_cause: bool, cost: float) -> f
     return cost if (acted and not had_real_cause) else 0.0
 
 
-def do_nothing_correct_rate(acted: bool, had_real_cause: bool) -> float:
-    """1.0 when do_nothing was the correct call (no real cause and we held), else
-    0.0. Aggregated across a batch this becomes the headline safety rate."""
+def do_nothing_correct_rate(acted: bool, had_real_cause: bool) -> float | None:
+    """The incident-D safety headline: was do_nothing the correct call?
+
+    Defined ONLY on no-cause windows (incident D / clean), where holding is the
+    right answer: 1.0 when we correctly HELD, 0.0 when we wrongly acted. On a
+    cause-bearing scenario the metric is undefined and returns ``None`` so batch
+    aggregation skips it — this keeps the number a clean "how often did we
+    correctly do nothing when there was nothing to do" and does NOT conflate it
+    with correctly acting on a real cause (see ``decision_correct_rate`` for the
+    overall decision-correctness number)."""
+    if had_real_cause:
+        return None
+    return 1.0 if not acted else 0.0
+
+
+def decision_correct_rate(acted: bool, had_real_cause: bool) -> float:
+    """Overall decision correctness across ALL scenarios: 1.0 when we HELD on a
+    no-cause window OR ACTED on a cause-bearing one, else 0.0.
+
+    This is the number that used to be overloaded onto
+    ``do_nothing_correct_rate``; it is kept as a SEPARATE field so the incident-D
+    hold-on-no-cause headline stays isolated."""
     correct_hold = (not acted) and (not had_real_cause)
     correct_act = acted and had_real_cause
     return 1.0 if (correct_hold or correct_act) else 0.0

@@ -7,6 +7,7 @@ negative (an action that made things worse) — which must be reported, not clam
 
 from ariadne.eval.metrics import (
     captured_revenue,
+    decision_correct_rate,
     do_nothing_correct_rate,
     false_intervention_cost,
     money_recovered,
@@ -67,12 +68,23 @@ def test_false_intervention_cost_charged_only_when_acting_without_cause():
     assert false_intervention_cost(acted=False, had_real_cause=False, cost=1000.0) == 0.0
 
 
-def test_do_nothing_correct_rate():
-    # correctly held when there was no cause
+def test_do_nothing_correct_rate_isolates_hold_on_no_cause():
+    """The incident-D headline is defined ONLY on no-cause windows: 1.0 when we
+    correctly held, 0.0 when we wrongly acted. It is UNDEFINED (None) on a
+    cause-bearing scenario so it is never diluted by correct-act cases."""
+    # correctly held when there was no cause -> the incident-D win
     assert do_nothing_correct_rate(acted=False, had_real_cause=False) == 1.0
-    # correctly acted when there was a cause
-    assert do_nothing_correct_rate(acted=True, had_real_cause=True) == 1.0
     # acted when it should have held (false intervention) -> wrong
     assert do_nothing_correct_rate(acted=True, had_real_cause=False) == 0.0
-    # held when it should have acted -> wrong
-    assert do_nothing_correct_rate(acted=False, had_real_cause=True) == 0.0
+    # cause-bearing scenarios are UNDEFINED for this headline (no conflation)
+    assert do_nothing_correct_rate(acted=True, had_real_cause=True) is None
+    assert do_nothing_correct_rate(acted=False, had_real_cause=True) is None
+
+
+def test_decision_correct_rate_is_the_overall_number():
+    """The overall decision-correctness number (kept separate from the incident-D
+    headline): correct to HOLD on no-cause OR to ACT on a real cause."""
+    assert decision_correct_rate(acted=False, had_real_cause=False) == 1.0
+    assert decision_correct_rate(acted=True, had_real_cause=True) == 1.0
+    assert decision_correct_rate(acted=True, had_real_cause=False) == 0.0
+    assert decision_correct_rate(acted=False, had_real_cause=True) == 0.0

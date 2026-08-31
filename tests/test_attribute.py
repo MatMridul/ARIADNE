@@ -102,6 +102,69 @@ def test_coincidental_window_blames_two_independent_psps_not_a_bank():
     assert blamed == {"psp_1", "psp_3"}
 
 
+def _method(node_id, success_rate, baseline_rate, volume=500):
+    return NodeStats(
+        node_id=node_id,
+        node_kind="method",
+        success_rate=success_rate,
+        volume=volume,
+        avg_latency_ms=120.0,
+        baseline_rate=baseline_rate,
+        delta=success_rate - baseline_rate,
+    )
+
+
+def test_cross_bank_method_fault_resolves_to_method_not_a_bank():
+    """A method carried by PSPs on DIFFERENT banks (upi: psp_1@bank_A + psp_3@bank_B)
+    drops a PSP set no single bank fully covers, so it correctly resolves to METHOD.
+    This is why scenario C uses `upi` — the evaluation of the method branch is honest."""
+    g = default_graph()
+    stats = {
+        "psp_1": _psp("psp_1", 0.60, 0.95),
+        "psp_2": _psp("psp_2", 0.94, 0.95),
+        "psp_3": _psp("psp_3", 0.58, 0.95),
+        "method_upi": _method("method_upi", 0.55, 0.95),
+    }
+    det = Detection(
+        triggered=True,
+        dropped_nodes=["method_upi", "psp_1", "psp_3"],
+        window=3,
+    )
+    attr = attribute(stats, g, det)
+    assert attr.root_cause_kind == "method"
+    assert attr.root_cause_id == "method_upi"
+
+
+def test_single_bank_method_fault_is_read_as_the_bank_accepted_dr001_consequence():
+    """ACCEPTED CONSEQUENCE of the pinned DR-001 B1 rule (review issue 1): a method
+    whose carriers ALL settle via one bank (netbanking: psp_1+psp_2, both bank_A)
+    drops exactly bank_A's PSP set (coverage 1.0 / specificity 1.0), so the
+    bank test — which runs first by design — reads it as a BANK fault, even though
+    a method is also down.
+
+    This is FAITHFUL to the frozen formula, not a bug: disambiguating would be a
+    design change requiring a new Decision Record. Pinned here so the behaviour is
+    explicit and a future silent reorder of the pinned rule fails loudly. The
+    evaluation stays honest because scenario C uses the cross-bank `upi` method
+    (see the test above), never this single-bank case."""
+    g = default_graph()
+    stats = {
+        "psp_1": _psp("psp_1", 0.60, 0.95),
+        "psp_2": _psp("psp_2", 0.58, 0.95),
+        "psp_3": _psp("psp_3", 0.95, 0.95),
+        "method_netbanking": _method("method_netbanking", 0.55, 0.95),
+    }
+    det = Detection(
+        triggered=True,
+        dropped_nodes=["method_netbanking", "psp_1", "psp_2"],
+        window=3,
+    )
+    attr = attribute(stats, g, det)
+    # faithful to DR-001 B1: bank branch fires before the method branch.
+    assert attr.root_cause_kind == "bank"
+    assert attr.root_cause_id == "bank_A"
+
+
 def test_s_min_constant_is_named_and_default_zero_point_eight():
     assert S_MIN == 0.8
 

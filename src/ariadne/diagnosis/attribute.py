@@ -104,6 +104,18 @@ def attribute(
     scored = _bank_scores(graph, down)
 
     # (1) best bank fully covered AND specific → blame the BANK.
+    #
+    # ACCEPTED CONSEQUENCE OF THE PINNED RULE (DR-001 B1): the bank test runs
+    # BEFORE the method test by design. A method whose carriers ALL settle via one
+    # bank (e.g. NETBANKING is routed only through psp_1+psp_2, both on bank_A)
+    # drops exactly that bank's PSP set, giving coverage=1.0/specificity=1.0, so it
+    # is read as a bank fault rather than a method fault. This is faithful to the
+    # frozen formula — it is NOT a bug to be reordered here; disambiguating a
+    # single-bank method from a bank would be a DESIGN change requiring a new
+    # Decision Record. The evaluation stays honest because scenario C uses `upi`,
+    # a CROSS-bank method (psp_1 on bank_A + psp_3 on bank_B) whose down set no
+    # single bank fully covers, so it correctly resolves to METHOD below. See the
+    # FEAT-005 review-hardening note and test_attribute for the pinned behaviour.
     full = [s for s in scored if s[1] == 1.0 and len(graph.psps_for_bank(s[0])) > 1]
     full.sort(key=lambda s: s[2], reverse=True)
     if full:

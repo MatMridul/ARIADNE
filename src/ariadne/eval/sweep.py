@@ -22,6 +22,7 @@ from ..simulator.incidents import GroundTruth, Incident, IncidentType
 from .metrics import (
     RunMetrics,
     calibration_error,
+    decision_correct_rate,
     detection_latency,
     detection_metrics,
     do_nothing_correct_rate,
@@ -118,12 +119,26 @@ def run_scenario(
             acted, had_cause, _FALSE_INTERVENTION_COST
         ),
         unsafe_action_rate=unsafe_action_rate(acted, had_cause),
-        do_nothing_correct_rate=do_nothing_correct_rate(acted, had_cause),
+        # None on cause-bearing scenarios -> stored as NaN so batch aggregation
+        # counts only the no-cause (incident-D / clean) windows this headline is for.
+        do_nothing_correct_rate=(
+            dnc if (dnc := do_nothing_correct_rate(acted, had_cause)) is not None
+            else float("nan")
+        ),
+        decision_correct_rate=decision_correct_rate(acted, had_cause),
     )
 
 
 def _mean(values: list[float]) -> float:
     return sum(values) / len(values) if values else 0.0
+
+
+def _mean_defined(values: list[float]) -> float:
+    """Mean over only the DEFINED values (skips NaN). Used for
+    ``do_nothing_correct_rate``, which is NaN on cause-bearing scenarios so the
+    incident-D headline averages over no-cause windows only."""
+    defined = [v for v in values if v == v]  # NaN != NaN
+    return sum(defined) / len(defined) if defined else 0.0
 
 
 def run_batch(system: str, intervention_threshold: float, seed: int) -> dict:
@@ -143,7 +158,12 @@ def run_batch(system: str, intervention_threshold: float, seed: int) -> dict:
         "path_accuracy": _mean([m.path_accuracy for m in metrics]),
         "calibration_error": _mean([m.calibration_error for m in metrics]),
         "unsafe_action_rate": _mean([m.unsafe_action_rate for m in metrics]),
-        "do_nothing_correct_rate": _mean([m.do_nothing_correct_rate for m in metrics]),
+        # Incident-D headline: averaged over no-cause windows only (NaN skipped).
+        "do_nothing_correct_rate": _mean_defined(
+            [m.do_nothing_correct_rate for m in metrics]
+        ),
+        # Overall decision correctness across every scenario (kept separate).
+        "decision_correct_rate": _mean([m.decision_correct_rate for m in metrics]),
         "n_scenarios": len(metrics),
     }
 
@@ -168,6 +188,9 @@ def build_frontier(seeds: list[int], thresholds: tuple[float, ...]) -> dict:
                     ),
                     "do_nothing_correct_rate": _mean(
                         [b["do_nothing_correct_rate"] for b in batches]
+                    ),
+                    "decision_correct_rate": _mean(
+                        [b["decision_correct_rate"] for b in batches]
                     ),
                     "root_cause_accuracy": _mean(
                         [b["root_cause_accuracy"] for b in batches]
