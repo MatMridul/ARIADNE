@@ -18,6 +18,7 @@ noise band for a fraction of cases so some incidents are genuinely ambiguous.
 from __future__ import annotations
 
 import hashlib
+import random
 import struct
 
 from ariadne.model.entities import Method, Transaction
@@ -34,6 +35,14 @@ def _u01(*parts: object) -> float:
     digest = hashlib.blake2b(key, digest_size=8).digest()
     (n,) = struct.unpack("<Q", digest)
     return n / 2**64
+
+
+def _txn_rng(seed: int, window: int, i: int) -> random.Random:
+    """A per-transaction PRNG seeded deterministically from (seed, window, i).
+    Its draw sequence depends ONLY on these -- never on the routing config -- so the
+    shared-seed counterfactual holds (an action that changes routing does not
+    reshuffle demand or failure draws). Faster than hashing every quantity."""
+    return random.Random((seed * 1_000_003 + window) * 1_000_003 + i)
 
 
 def _routing_choice(graph: PaymentGraph, method: Method, r: float) -> str:
@@ -98,18 +107,27 @@ def _incident_drop(
     return 0.0
 
 
+def _window_noise(cfg: SimConfig) -> dict[tuple[int, str], float]:
+    """Per-(window, method) success-rate noise, deterministic from cfg.seed.
+    Precomputed once so it is stable regardless of routing (shared-seed)."""
+    out: dict[tuple[int, str], float] = {}
+    rng = random.Random(cfg.seed * 7_777_777 + 13)
+    for window in range(cfg.n_windows):
+        for m in _METHODS:
+            out[(window, m.value)] = (rng.random() - 0.5) * 2.0 * cfg.noise_std
+    return out
+
+
 def _effective_rate(
     cfg: SimConfig,
     method: Method,
     cohort: str,
     geography: str,
-    window: int,
+    noise: float,
     drop: float,
 ) -> float:
     base = cfg.base_success[method]
     base += cfg.cohort_offset(cohort) + cfg.geography_offset(geography)
-    # per-window noise, symmetric, deterministic from (seed, window, method)
-    noise = (_u01(cfg.seed, "noise", window, method.value) - 0.5) * 2.0 * cfg.noise_std
     rate = base + noise - drop
     return min(1.0, max(0.0, rate))
 
@@ -122,32 +140,33 @@ def generate(
     Ground truth is a SEPARATE return value; it is never embedded in a Transaction.
     """
     txns: list[Transaction] = []
+    noise_map = _window_noise(cfg)
+    n_methods = len(_METHODS)
+    n_cohorts = len(cfg.cohorts)
+    n_geos = len(cfg.geographies)
     for window in range(cfg.n_windows):
         for i in range(cfg.txns_per_window):
-            # demand attributes (same regardless of routing config -> shared-seed)
-            m = _METHODS[int(_u01(cfg.seed, "method", window, i) * len(_METHODS))]
-            cohort = cfg.cohorts[
-                int(_u01(cfg.seed, "cohort", window, i) * len(cfg.cohorts))
-            ]
-            geo = cfg.geographies[
-                int(_u01(cfg.seed, "geo", window, i) * len(cfg.geographies))
-            ]
-            amount = cfg.avg_amount * (0.5 + _u01(cfg.seed, "amount", window, i))
+            rng = _txn_rng(cfg.seed, window, i)
+            # demand attributes (drawn first, in a fixed order -> same regardless of
+            # routing config, so the shared-seed counterfactual holds)
+            m = _METHODS[int(rng.random() * n_methods)]
+            cohort = cfg.cohorts[int(rng.random() * n_cohorts)]
+            geo = cfg.geographies[int(rng.random() * n_geos)]
+            amount = cfg.avg_amount * (0.5 + rng.random())
+            r_route = rng.random()
+            r_success = rng.random()
+            r_latency = rng.random()
 
-            r_route = _u01(cfg.seed, "route", window, i)
             psp_id = _routing_choice(graph, m, r_route)
             if psp_id == "":
                 continue  # method fully disabled: transaction cannot be placed
             bank_id = graph.settles_via.get(psp_id, "")
 
             drop = _incident_drop(incident, graph, window, psp_id, m)
-            rate = _effective_rate(cfg, m, cohort, geo, window, drop)
+            rate = _effective_rate(cfg, m, cohort, geo, noise_map[(window, m.value)], drop)
 
-            r_success = _u01(cfg.seed, "success", window, i)
             success = r_success < rate
-            latency = cfg.base_latency_ms * (
-                1.0 + _u01(cfg.seed, "latency", window, i)
-            )
+            latency = cfg.base_latency_ms * (1.0 + r_latency)
             if not success:
                 latency *= 1.5  # failures tend to be slower
             failure_code = None if success else _failure_code(m, drop)
