@@ -16,7 +16,6 @@ Imports NOTHING from simulator/ -- never sees ground truth. Imports NO graph.
 from __future__ import annotations
 
 from ariadne.diagnosis.attribute import Attribution
-from ariadne.diagnosis.detect import Detection
 from ariadne.observe.aggregate import NodeStats
 
 

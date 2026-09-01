@@ -17,9 +17,7 @@ noise band for a fraction of cases so some incidents are genuinely ambiguous.
 """
 from __future__ import annotations
 
-import hashlib
 import random
-import struct
 
 from ariadne.model.entities import Method, Transaction
 from ariadne.model.graph import PaymentGraph
@@ -27,14 +25,6 @@ from ariadne.simulator.config import SimConfig
 from ariadne.simulator.incidents import GroundTruth, Incident, IncidentType
 
 _METHODS = (Method.UPI, Method.CARD, Method.NETBANKING)
-
-
-def _u01(*parts: object) -> float:
-    """A deterministic uniform(0,1) draw from a tuple key (stdlib hashing only)."""
-    key = "|".join(str(p) for p in parts).encode("utf-8")
-    digest = hashlib.blake2b(key, digest_size=8).digest()
-    (n,) = struct.unpack("<Q", digest)
-    return n / 2**64
 
 
 def _txn_rng(seed: int, window: int, i: int) -> random.Random:
@@ -167,7 +157,14 @@ def generate(
 
             success = r_success < rate
             latency = cfg.base_latency_ms * (1.0 + r_latency)
-            failure_code = None if success else _failure_code(m, drop)
+            # Failure code is assigned INDEPENDENTLY of whether the injected incident
+            # caused the failure (DR/audit P2 #6): a fixed fraction of ALL failures are
+            # retriable, drawn from the txn RNG. This removes the ground-truth coupling
+            # -- retry_fallback recovers a realistic slice of failures without knowing
+            # which ones the incident caused. r_code is drawn AFTER the prior draws so
+            # the demand/success/latency sequence is unchanged.
+            r_code = rng.random()
+            failure_code = None if success else _failure_code(m, r_code)
 
             # Tier-2 retry_fallback: retry retriable failures on the target method,
             # bounded, using fresh draws from the same txn RNG (deterministic).
@@ -203,13 +200,22 @@ def generate(
     return txns, gt
 
 
-def _failure_code(method: Method, drop: float) -> str:
-    """A plausible failure code. Incident-driven failures get a distinct code from
-    baseline noise failures -- but note the reasoner treats codes as opaque; codes
-    do NOT leak ground truth (they are just observations)."""
-    if drop > 0.0:
-        return "BANK_DECLINE" if method != Method.NETBANKING else "GATEWAY_TIMEOUT"
-    return "INSUFFICIENT_FUNDS"
+# Fraction of failures (of ANY cause) that carry a retriable transient code. Chosen
+# so retry_fallback has a realistic-but-bounded recovery ceiling and, crucially, does
+# NOT perfectly target incident-caused failures (audit P2 #6). Cause-independent.
+_RETRIABLE_FRACTION = 0.4
+
+
+def _failure_code(method: Method, r_code: float) -> str:
+    """A plausible failure code assigned from a uniform draw r_code in [0,1),
+    INDEPENDENT of whether the injected incident caused this failure. A fixed
+    fraction are transient/retriable (GATEWAY_TIMEOUT); the rest are non-retriable.
+    Codes are observations only and, being cause-independent, cannot leak whether a
+    given failure was injected. The reasoner never reads codes regardless (they do
+    not cross the aggregation boundary)."""
+    if r_code < _RETRIABLE_FRACTION:
+        return "GATEWAY_TIMEOUT"
+    return "BANK_DECLINE" if method != Method.NETBANKING else "INSUFFICIENT_FUNDS"
 
 
 def _ground_truth(incident: Incident, graph: PaymentGraph) -> GroundTruth:

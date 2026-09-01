@@ -29,6 +29,10 @@ from ariadne.observe.aggregate import NodeStats
 
 S_MIN = 0.8  # pinned (DR-001); specificity floor to blame a shared bank
 _METHOD_DELTA_MIN = 0.05  # a method must be clearly down to be blamed
+# A method fault CONCENTRATES in one method (others near baseline); a PSP/bank fault
+# spreads evenly across all methods. The worst method must dominate the 2nd-worst by
+# this margin for a method explanation to be preferred over independent PSPs (DR-002).
+_METHOD_CONCENTRATION_MIN = 0.06
 
 
 @dataclass
@@ -68,7 +72,7 @@ def attribute(
         # no PSP breached -> a pure method-level fault can still be present, since a
         # single method's drop dilutes across each PSP's mixed traffic. Inspect the
         # method view directly (still no ground truth).
-        method_cause = _method_cause(stats)
+        method_cause = _method_fault(stats)
         if method_cause is not None:
             m_id, m_delta = method_cause
             return Attribution(
@@ -76,7 +80,8 @@ def attribute(
                 root_cause_kind="method",
                 confidence=min(1.0, abs(m_delta) / 0.3),
                 evidence_path=[
-                    f"method {m_id} delta={m_delta:.3f}; no single PSP breached",
+                    f"method {m_id} delta={m_delta:.3f} concentrated in one method;"
+                    " no single PSP breached",
                     "attributing to the method, not a PSP or bank",
                 ],
             )
@@ -117,26 +122,29 @@ def attribute(
             psp_causes=sorted(down),
         )
 
-    # --- method-level explanation: a method down across PSPs --------------
-    method_cause = _method_cause(stats)
-    if method_cause is not None:
+    # --- concentrated method-level explanation (DR-002) -------------------
+    # A method cause is preferred over independent PSPs ONLY when the failure is
+    # CONCENTRATED in a single method (one method dominates the next-worst by
+    # _METHOD_CONCENTRATION_MIN). Independent PSP faults (incident E) degrade all
+    # methods roughly equally, so _method_fault returns None for them and this
+    # branch does NOT fire -- they fall through to the independent-PSP branch below.
+    method_cause = _method_fault(stats)
+    if method_cause is not None and len(down) > 1:
         m_id, m_delta = method_cause
-        # only prefer a method explanation when PSP-level signal doesn't cleanly
-        # localise to one PSP (i.e. multiple PSPs down but no shared bank)
-        if len(down) > 1:
-            conf = min(1.0, abs(m_delta) / 0.3)
-            return Attribution(
-                root_cause_id=m_id,
-                root_cause_kind="method",
-                confidence=conf,
-                evidence_path=[
-                    f"method {m_id} delta={m_delta:.3f} across PSPs",
-                    "no single bank covers all down PSPs",
-                ],
-            )
+        conf = min(1.0, abs(m_delta) / 0.3)
+        return Attribution(
+            root_cause_id=m_id,
+            root_cause_kind="method",
+            confidence=conf,
+            evidence_path=[
+                f"method {m_id} delta={m_delta:.3f} concentrated in one method",
+                "failure dominated by one method, not localised to a bank or PSP set",
+            ],
+        )
 
     # --- independent PSP faults (incident E / single-PSP B) ---------------
-    # down PSPs do not all share one bank -> blame each on itself.
+    # down PSPs do not all share one bank AND no concentrated method explains them
+    # -> blame each on itself.
     deltas = [abs(_psp_delta(stats, p)) for p in down]
     conf = min(1.0, (sum(deltas) / len(deltas)) / 0.3) if deltas else 0.0
     return Attribution(
@@ -151,10 +159,22 @@ def attribute(
     )
 
 
-def _method_cause(stats: dict[str, NodeStats]) -> tuple[str, float] | None:
-    worst: tuple[str, float] | None = None
-    for s in stats.values():
-        if s.node_kind == "method" and s.delta <= -_METHOD_DELTA_MIN:
-            if worst is None or s.delta < worst[1]:
-                worst = (s.node_id, s.delta)
-    return worst
+def _method_fault(stats: dict[str, NodeStats]) -> tuple[str, float] | None:
+    """Return (method_id, delta) ONLY when a single method is genuinely the cause:
+    it is clearly down AND its drop DOMINATES the next-worst method by
+    _METHOD_CONCENTRATION_MIN (DR-002). A PSP/bank fault degrades all methods roughly
+    equally (low concentration) and must NOT be read as a method fault."""
+    methods = sorted(
+        (s for s in stats.values() if s.node_kind == "method"),
+        key=lambda s: s.delta,
+    )
+    if not methods:
+        return None
+    worst = methods[0]
+    if worst.delta > -_METHOD_DELTA_MIN:
+        return None  # no method clearly down
+    second_delta = methods[1].delta if len(methods) > 1 else 0.0
+    concentration = second_delta - worst.delta  # >= 0; large => worst dominates
+    if concentration < _METHOD_CONCENTRATION_MIN:
+        return None  # failure is spread across methods -> not a method fault
+    return worst.node_id, worst.delta

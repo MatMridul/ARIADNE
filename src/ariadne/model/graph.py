@@ -6,7 +6,7 @@ Stdlib only; dict-backed.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from ariadne.model.entities import Bank, Method, PSP
 

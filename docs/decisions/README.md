@@ -141,6 +141,7 @@ same reasons → same DR, noted in Consequences.
 | DR   | Title | Status |
 |------|-------|--------|
 | 000  | Template (not a decision) | — |
-| _DR-001 (Q1 evidence feasibility) will be added once the Q1 investigation has actually been run._ | | |
+| 001  | ARIADNE core design: graph size, attribution scoring, acting baseline | Accepted |
+| 002  | Attribution branch disambiguation (shared-dep / independent-PSP / method) | Proposed |
 
 _Update this table whenever a DR is added or its status changes._

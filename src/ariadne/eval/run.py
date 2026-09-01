@@ -9,22 +9,23 @@ eval/sweep.py (kept separate so each module stays small).
 from __future__ import annotations
 
 from ariadne.baseline.independent import baseline_attribute
-from ariadne.decide.policy import apply_action, select_action
+from ariadne.decide.policy import select_action
 from ariadne.diagnosis.attribute import Attribution, attribute
 from ariadne.diagnosis.detect import detect
 from ariadne.eval.metrics import (
     RunMetrics,
-    captured_revenue,
+    active_true_causes,
+    is_action_audited,
     is_no_cause,
+    is_unsafe_action,
     money_recovered,
     root_cause_hit_window,
 )
 from ariadne.model.graph import PaymentGraph, default_graph
-from ariadne.observe.aggregate import psp_stats, window_stats
+from ariadne.observe.aggregate import window_stats
 from ariadne.simulator.config import SimConfig
 from ariadne.simulator.engine import generate
 from ariadne.simulator.incidents import (
-    GroundTruth,
     Incident,
     IncidentType,
 )
@@ -67,11 +68,18 @@ def run_once(
 
     correct_detects = 0
     total_detects = 0
-    rca_hits = 0
-    total_scored = 0
+    rca_hits_cond = 0            # RCA numerator | detection fired
+    rca_scored_cond = 0         # RCA denominator | detection fired
+    rca_hits_uncond = 0         # RCA numerator | all active-incident windows
+    rca_scored_uncond = 0       # RCA denominator | all active-incident windows
     do_nothing_correct = 0
     do_nothing_total = 0
     expected_rec_sum = 0.0
+
+    executed_actions = 0        # non-do_nothing actions actually taken
+    unsafe_actions = 0          # of those, how many violated a safety invariant
+    unaudited_actions = 0       # actions missing audit fields (should be 0)
+    false_interventions = 0     # acted on a window with NO active incident cause
 
     best_action = None          # representative recovery action for this scenario
     best_expected = -1.0
@@ -89,22 +97,49 @@ def run_once(
 
         action = select_action(attr, graph, stats, intervention_threshold, avg_amount=cfg.avg_amount)
         inc_active = _incident_active(gt.incident, w)
+        active_causes = active_true_causes(gt, w)
+        hit = root_cause_hit_window(gt, _blamed_ids(attr), w)
 
+        # detection metrics
         if det.triggered:
             total_detects += 1
-            total_scored += 1
             if inc_active:
                 correct_detects += 1
-            if root_cause_hit_window(gt, _blamed_ids(attr), w):
-                rca_hits += 1
 
+        # RCA | detected: only windows where detection fired (the historical metric)
+        if det.triggered:
+            rca_scored_cond += 1
+            if hit:
+                rca_hits_cond += 1
+
+        # RCA | unconditional: EVERY window with a truly active cause, incl. detection
+        # misses (a detection miss on an active window is an RCA miss). P1 #2 — do not
+        # hide detection misses from the evaluation.
+        if active_causes:
+            rca_scored_uncond += 1
+            if hit:
+                rca_hits_uncond += 1
+
+        # action + safety accounting (P2 #4/#5: measured, not asserted)
         if action.kind != "do_nothing":
+            executed_actions += 1
+            if not is_action_audited(action):
+                unaudited_actions += 1
+            psp_delta = {s.node_id: s.delta for s in stats.values() if s.node_kind == "psp"}
+            active_methods = [
+                m.value for m in graph.routing
+                if any(wt > 0.0 for _p, wt in graph.routing[m])
+            ]
+            if is_unsafe_action(action, graph, psp_delta, active_methods):
+                unsafe_actions += 1
             expected_rec_sum += action.expected_recovery
             if action.expected_recovery > best_expected:
                 best_expected = action.expected_recovery
                 best_action = action
             if not inc_active:
                 acted_when_clean = True
+            if not active_causes:
+                false_interventions += 1  # acted where there was no real cause
 
         if is_no_cause(gt):
             do_nothing_total += 1
@@ -122,14 +157,25 @@ def run_once(
             # the action hurt, else a fixed churn/ops proxy.
             false_cost = abs(realized) if realized < 0 else (cfg.avg_amount * 0.01 * cfg.txns_per_window)
 
+    rca_cond = rca_hits_cond / rca_scored_cond if rca_scored_cond else 1.0
+    rca_uncond = rca_hits_uncond / rca_scored_uncond if rca_scored_uncond else 1.0
     return RunMetrics(
         detection_precision=correct_detects / total_detects if total_detects else 1.0,
         detection_recall=correct_detects / max(1, _incident_windows(gt.incident, cfg.n_windows)),
-        root_cause_accuracy=rca_hits / total_scored if total_scored else 1.0,
+        root_cause_accuracy=rca_cond,                       # back-compat alias
+        root_cause_accuracy_conditional=rca_cond,
+        root_cause_accuracy_unconditional=rca_uncond,
+        rca_scored_conditional=rca_scored_cond,
+        rca_scored_unconditional=rca_scored_uncond,
         money_recovered=realized,
         expected_vs_realized_gap=abs(expected_rec_sum - realized),
         false_intervention_cost=false_cost,
+        false_interventions=false_interventions,
+        unsafe_action_rate=(unsafe_actions / executed_actions) if executed_actions else 0.0,
+        executed_actions=executed_actions,
+        unaudited_actions=unaudited_actions,
         do_nothing_correct_rate=do_nothing_correct / do_nothing_total if do_nothing_total else 1.0,
+        do_nothing_scored=do_nothing_total,
         n_scenarios=1,
     )
 

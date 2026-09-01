@@ -6,8 +6,8 @@ choose the bounded action with best expected recovery for the diagnosed cause,
 never routing onto a node the stats show is also bad and never disabling the last
 working method.
 
-Tier-1 action menu: reroute + do_nothing. (disable_method / retry_fallback are
-Tier-2, wired in via `enable_tier2`.)
+Action menu: reroute + do_nothing (Tier-1); disable_method + retry_fallback (Tier-2),
+selected inline by cause kind. No feature flag.
 """
 from __future__ import annotations
 
@@ -101,7 +101,7 @@ def select_action(
                 evidence_path=attr.evidence_path + [f"disable severely-down method {m.value}"],
             )
         return A.retry_fallback(
-            m, max_retries=2, retriable_codes=["GATEWAY_TIMEOUT", "BANK_DECLINE"],
+            m, max_retries=2, retriable_codes=["GATEWAY_TIMEOUT"],
             confidence=attr.confidence,
             expected_recovery=(m_stats.volume * (1 - rate) * 0.5 * avg_amount) if m_stats else 0.0,
             evidence_path=attr.evidence_path + [f"retry retriable failures on method {m.value}"],
