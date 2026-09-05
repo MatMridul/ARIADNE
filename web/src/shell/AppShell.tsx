@@ -5,7 +5,7 @@ import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "@/design/ui";
 
 const GROUPS: { heading: string; items: { to: string; label: string; end?: boolean }[] }[] = [
-  { heading: "Control", items: [{ to: "/", label: "Command", end: true }] },
+  { heading: "Control", items: [{ to: "/", label: "Command", end: true }, { to: "/connect", label: "Connect" }] },
   {
     heading: "System",
     items: [

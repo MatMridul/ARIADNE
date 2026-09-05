@@ -6,11 +6,13 @@
 import {
   AuditSchema,
   EvaluationSchema,
+  ImportResultSchema,
   IncidentsSchema,
   SimulateResponseSchema,
   TopologySchema,
   type Audit,
   type Evaluation,
+  type ImportResult,
   type Incidents,
   type SimulateRequest,
   type SimulateResponse,
@@ -72,4 +74,21 @@ export async function fetchAudit(req: SimulateRequest): Promise<Audit> {
     system: req.system,
   });
   return AuditSchema.parse(await getJSON(`/audit?${params.toString()}`));
+}
+
+/** Validate + normalize a topology manifest. Resolves to a typed ImportResult on
+ * success; on a 422 it throws an Error whose message joins the validation issues. */
+export async function importTopology(manifest: unknown): Promise<ImportResult> {
+  const res = await fetch(`${BASE}/topology/import`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ manifest }),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const detail = (body as any).detail;
+    const errors: string[] = detail?.errors ?? [detail || `HTTP ${res.status}`];
+    throw new Error(errors.join("\n"));
+  }
+  return ImportResultSchema.parse(body);
 }

@@ -282,6 +282,72 @@ def get_audit(
     }
 
 
+# ---- POST /api/topology/import ------------------------------------------------
+class ImportRequest(BaseModel):
+    manifest: dict
+
+
+def _serialize_graph(g, merchant_id: str, merchant_name: str) -> dict:
+    """Serialize a PaymentGraph to the SAME shape as GET /api/topology so the
+    existing frontend visualization renders an imported topology unchanged."""
+    shared = g.shared_banks()
+    banks = []
+    for bank_id, bank in g.banks.items():
+        psps = g.psps_for_bank(bank_id)
+        banks.append(
+            {"id": bank_id, "label": bank.name, "role": bank.role,
+             "shared": bank_id in shared, "psps": psps}
+        )
+    routing = []
+    for method, rows in g.routing.items():
+        for psp_id, weight in rows:
+            if weight > 0.0:
+                routing.append({"method": method.value, "psp_id": psp_id, "weight": weight})
+    return {
+        "merchant": {"id": merchant_id, "label": merchant_name},
+        "methods": [
+            {"id": m.value, "label": _METHOD_LABEL.get(m.value, m.value)}
+            for m in Method if m in g.routing
+        ],
+        "psps": [
+            {"id": p, "label": g.psps[p].name, "bank_id": g.settles_via.get(p, "")}
+            for p in g.psps
+        ],
+        "banks": banks,
+        "routing": routing,
+        "shared_banks": shared,
+    }
+
+
+@app.post("/api/topology/import")
+def post_topology_import(req: ImportRequest) -> dict:
+    """Validate a topology manifest and normalize it into the existing PaymentGraph.
+    In-memory / request-scoped only — NOT persisted. Returns the normalized topology
+    (same shape as GET /api/topology), node/relationship counts, detected shared
+    dependencies, and validation status."""
+    from ariadne.model.manifest import TopologyValidationError, manifest_to_graph
+
+    try:
+        norm = manifest_to_graph(req.manifest)
+    except TopologyValidationError as e:
+        # 422: structurally invalid manifest; return every issue for the UI.
+        raise HTTPException(status_code=422, detail={"valid": False, "errors": e.errors})
+
+    topology = _serialize_graph(norm.graph, norm.merchant_id, norm.merchant_name)
+    return {
+        "valid": True,
+        "topology": topology,
+        "counts": {
+            "methods": len(norm.method_ids),
+            "psps": len(norm.psp_ids),
+            "banks": len(norm.bank_ids),
+            "routes": norm.route_count,
+        },
+        "shared_dependencies": norm.shared_banks,
+        "note": "in-memory / request-scoped — not persisted",
+    }
+
+
 # ---- static SPA mount (prod only; dev uses the Vite server) -------------------
 # Serve the built SPA with a proper SPA fallback: hashed assets under /assets are
 # served directly; any other non-/api path returns index.html so client-side deep

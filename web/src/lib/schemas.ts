@@ -201,3 +201,23 @@ export const AuditSchema = z.object({
   ),
 });
 export type Audit = z.infer<typeof AuditSchema>;
+
+// ---- topology import ---------------------------------------------------------
+export const ImportResultSchema = z.object({
+  valid: z.literal(true),
+  topology: TopologySchema,
+  counts: z.object({
+    methods: z.number(),
+    psps: z.number(),
+    banks: z.number(),
+    routes: z.number(),
+  }),
+  shared_dependencies: z.record(z.string(), z.array(z.string())),
+  note: z.string(),
+});
+export type ImportResult = z.infer<typeof ImportResultSchema>;
+
+export interface ImportError {
+  valid: false;
+  errors: string[];
+}

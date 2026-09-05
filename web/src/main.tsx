@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "@/design/globals.css";
 import { AppShell } from "@/shell/AppShell";
 import { CommandCenterPage } from "@/pages/CommandCenterPage";
+import { ConnectPage } from "@/onboarding";
 import { TopologyPage } from "@/pages/TopologyPage";
 import { IncidentsPage } from "@/pages/IncidentsPage";
 import { EvaluationPage } from "@/pages/EvaluationPage";
@@ -18,6 +19,7 @@ const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <CommandCenterPage /> },
+      { path: "connect", element: <ConnectPage /> },
       { path: "topology", element: <TopologyPage /> },
       { path: "incidents", element: <IncidentsPage /> },
       { path: "evaluation", element: <EvaluationPage /> },
