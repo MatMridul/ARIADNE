@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: theme("colors.bg.base");
+  color: theme("colors.text.primary");
+  font-family: theme("fontFamily.sans");
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* thin control-room scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: theme("colors.border.DEFAULT");
+  border-radius: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* number/tabular alignment for metrics */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-family: theme("fontFamily.mono");
+}

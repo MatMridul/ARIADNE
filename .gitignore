@@ -82,3 +82,15 @@ scratch/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ---- Web frontend (Node) ----
+web/node_modules/
+web/dist/
+web/.vite/
+npm-debug.log*
+# the Python `lib/` and `dist/` patterns above are directory-name globs that would
+# otherwise swallow the frontend's real source tree — force these back in:
+!web/src/lib/
+!web/src/lib/**
+
+web/*.tsbuildinfo
