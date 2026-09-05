@@ -2,10 +2,12 @@
 
 **Adaptive Revenue Intelligence & Action** — an [ATLAS-class](https://github.com/MatMridul/ATLAS) system for payment revenue recovery.
 
-> **Status: Tier-1 + Tier-2 built, tested, and evaluated end-to-end.** The Shared
-> Dependency Discrimination result and the recovery-vs-risk frontier are reproduced
-> under `reports/`. An operator web console (Command Center, live payment topology,
-> incident/RCA, evaluation, audit) runs on top of the same engine.
+> **Status: built, tested, and evaluated end-to-end.** The Shared Dependency
+> Discrimination result and the recovery-vs-risk frontier are reproduced under
+> `reports/`. A topology-ingestion boundary (Connect) maps a merchant's payment
+> infrastructure into the graph, and an operator web console (Command Center, live
+> payment topology, incident/RCA, evaluation, audit) runs on top of the same engine.
+> 74 automated tests pass (62 core + 12 ingestion).
 
 ---
 
@@ -24,6 +26,30 @@ The loop:
 ```
 simulate → aggregate → detect → attribute → decide → re-simulate outcome → score
 ```
+
+## The operator experience
+
+ARIA ships an operator web console (a financial-systems instrument, not a generic
+dashboard) on top of the same engine. Its surfaces:
+
+- **Connect** — a topology-ingestion front door: paste/validate a payment-topology
+  manifest (methods, PSPs, banks, and method→PSP→bank routes); ARIA validates it and
+  normalizes it into its dependency graph, surfacing detected shared dependencies.
+- **Command Center** — the living payment network as the primary object: watch
+  degradation propagate, the shared bank light up as root cause with evidence and
+  confidence, a bounded recovery action, and the measured outcome, along a
+  DETECTED → DIAGNOSED → INTERVENTION → RECOVERED sequence.
+- **Topology** — the full dependency graph with per-window playback of an incident.
+- **Incidents & RCA** — the incident story: degradation → shared-dependency reasoning
+  → attribution → recovery console → measured outcome.
+- **Evaluation** — ARIA vs the graph-blind baseline: the discrimination result, the
+  recovery-vs-risk frontier, safety metrics, and per-seed variance (honest, no
+  cherry-picking).
+- **Audit** — every action's decision id, evidence path, and confidence
+  (derived-from-run; window index, not wall-clock).
+
+The CLI/eval path is the engineering interface; the web console is the operator
+interface. Both run on the same deterministic core.
 
 ## The thesis (and how it is tested)
 
@@ -107,7 +133,7 @@ payment revenue-recovery domain. ATLAS provides the pattern; ARIA is the applica
 
 ```
 src/ariadne/        Python core (package name retained as a technical identifier)
-  model/            entities + PaymentGraph (static topology; health is derived)
+  model/            entities + PaymentGraph (static topology; health is derived) + manifest ingestion
   simulator/        honest-adversary generator (the ONLY holder of ground truth)
   observe/          raw txns → per-window NodeStats
   diagnosis/        ARIA's relational attribution (detect + attribute)
@@ -116,6 +142,8 @@ src/ariadne/        Python core (package name retained as a technical identifier
   eval/             the scoring harness (reads ground truth) + scenarios + sweep + cache
   reporting/        the recovery-vs-risk frontier plot (matplotlib, isolated)
 web/                operator web console (Vite + React + TS) + thin FastAPI over the core
+  api/              FastAPI: /api/topology, /api/topology/import, /api/simulate, /api/evaluation, /api/incidents, /api/audit
+  src/              onboarding (Connect) · shell · topology graph · incident/RCA · evaluation · design system · lib (typed client)
 ```
 
 > The Python package is named `ariadne` — a **technical identifier** kept stable to
