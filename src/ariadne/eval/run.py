@@ -180,6 +180,114 @@ def run_once(
     )
 
 
+def run_once_trace(
+    system: str,
+    intervention_threshold: float,
+    seed: int,
+    incident: Incident | None = None,
+    graph: PaymentGraph | None = None,
+    cfg: SimConfig | None = None,
+) -> dict:
+    """Same loop as run_once, but returns a per-window TRACE for the API/UI.
+
+    This is the presentation seam: it exposes exactly what the diagnoser saw and
+    decided per window (observed PSP/method stats, the detection, the attribution,
+    the chosen action) plus the scenario-level shared-seed counterfactual. It reads
+    GroundTruth ONLY for the incident metadata (window span, true causes) that the
+    UI needs to label the story — never to influence attribution, which runs on the
+    same diagnoser-visible stats as run_once. Returns plain dicts (JSON-ready).
+
+    Determinism: identical seed -> identical trace (same generate() draws).
+    """
+    if graph is None:
+        graph = default_graph()
+    if cfg is None:
+        cfg = SimConfig(seed=seed)
+    if incident is None:
+        from ariadne.simulator.incidents import make_incident
+        incident = make_incident(IncidentType.SHARED_BANK, seed, cfg.n_windows, target_id="bank_A")
+
+    txns, gt = generate(graph, cfg, incident)
+
+    windows: list[dict] = []
+    best_action = None
+    best_expected = -1.0
+
+    for w in range(cfg.n_windows):
+        stats = window_stats(txns, graph, w, cfg.txns_per_window)
+        det = detect(stats, DETECT_THRESHOLD, w)
+        if system == "ariadne":
+            attr = attribute(stats, graph, det)
+        else:
+            attr = baseline_attribute(stats, DETECT_THRESHOLD)
+        action = select_action(
+            attr, graph, stats, intervention_threshold, avg_amount=cfg.avg_amount
+        )
+        if action.kind != "do_nothing" and action.expected_recovery > best_expected:
+            best_expected = action.expected_recovery
+            best_action = action
+
+        windows.append(
+            {
+                "window": w,
+                "nodes": [
+                    {
+                        "node_id": s.node_id,
+                        "node_kind": s.node_kind,
+                        "success_rate": round(s.success_rate, 4),
+                        "baseline_rate": round(s.baseline_rate, 4),
+                        "delta": round(s.delta, 4),
+                        "volume": s.volume,
+                        "avg_latency_ms": round(s.avg_latency_ms, 1),
+                    }
+                    for s in stats.values()
+                ],
+                "detection": {
+                    "triggered": det.triggered,
+                    "dropped_nodes": list(det.dropped_nodes),
+                },
+                "attribution": {
+                    "root_cause_id": attr.root_cause_id,
+                    "root_cause_kind": attr.root_cause_kind,
+                    "confidence": round(attr.confidence, 4),
+                    "evidence_path": list(attr.evidence_path),
+                    "claim_type": attr.claim_type,
+                    "psp_causes": list(attr.psp_causes),
+                },
+                "action": {
+                    "kind": action.kind,
+                    "params": dict(action.params),
+                    "decision_id": action.decision_id,
+                    "evidence_path": list(action.evidence_path),
+                    "confidence": round(action.confidence, 4),
+                    "expected_recovery": round(action.expected_recovery, 2),
+                },
+            }
+        )
+
+    realized = (
+        round(money_recovered(graph, cfg, gt.incident, best_action), 2)
+        if best_action is not None
+        else 0.0
+    )
+
+    return {
+        "system": system,
+        "seed": seed,
+        "intervention_threshold": intervention_threshold,
+        "incident": {
+            "incident_type": gt.incident.incident_type.value,
+            "target_id": gt.incident.target_id,
+            "secondary_target_id": gt.incident.secondary_target_id,
+            "start_window": gt.incident.start_window,
+            "end_window": gt.incident.end_window,
+            "true_causes": list(gt.true_causes),
+        },
+        "windows": windows,
+        "money_recovered": realized,
+    }
+
+
 def _incident_active(incident: Incident, w: int) -> bool:
     if incident.incident_type == IncidentType.NONE:
         return False

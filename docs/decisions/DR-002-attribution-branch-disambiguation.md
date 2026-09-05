@@ -6,11 +6,17 @@
 > or the graph size — those remain exactly as **DR-001 (Accepted)** set them.
 > DR-001 is not rewritten. This DR is the smallest possible clarifying amendment.
 
-- **Status:** Proposed
-- **Status history:** Proposed 2026-08-31 (awaiting independent challenge)
+- **Status:** Accepted
+- **Status history:** Proposed 2026-08-31 (awaiting independent challenge) → Accepted 2026-09-05 (held-out validation, seeds 26–55)
 - **Date proposed:** 2026-08-31
-- **Date resolved:** _pending_
+- **Date resolved:** 2026-09-05
 - **Supersedes / Superseded by:** Clarifies/amends DR-001 (does NOT supersede it)
+- **Challenge note:** the Pass-2 challenge was a *held-out generalization test* on
+  seeds never used to select the threshold (a mechanical, falsifiable check),
+  executed by a separate investigation agent — not a full independent human/ChatGPT
+  adversarial review. It is strong evidence on the specific frozen doubt (is the
+  boundary separable out-of-sample?), and a subsequent human/ChatGPT challenge may
+  still be layered on without reopening the frozen Pass-1 sections.
 
 ## Question
 
@@ -137,16 +143,91 @@ overlap band is a genuine, disclosed limitation, not a fully dissolved one.
 
 ## External Challenge
 
-_pending — to be filled after independent (ChatGPT / reviewer) challenge._
+The independent challenge to the frozen Strongest-Argument-Against was carried out
+as a **held-out generalization test on seeds 26–55** — a set disjoint from both the
+DR's own in-sample evidence (seeds 1–25) and the standard evaluation
+(`eval/sweep.py` `DEFAULT_SEEDS` = 1–20). The threshold `0.06` was never fit to
+these seeds, so they are a genuine out-of-sample check of the exact doubt the
+Strongest-Argument-Against raises: *is the E-vs-C boundary really separable, or is
+0.06 a number tuned to make E pass on the seeds it was chosen from?*
+
+The challenge measured, on held-out seeds 26–55, using the real diagnoser path
+(`window_stats → detect → attribute`, ground truth never fed to attribution):
+
+- The per-window method-concentration statistic `(2nd-worst − worst method delta)`
+  for incident E (coincidental, independent PSPs) vs. incident C (method fault).
+- The rate at which E windows are misattributed to `method` at 0.06.
+- A sweep of candidate thresholds {0.04, 0.05, 0.06, 0.07, 0.08, 0.10} tabulating
+  E-misattribution and C-correct rates out-of-sample.
+- `discrimination_result` on seeds 26–55 for incidents A, B, E.
 
 ## Resolution
 
-_pending._
+The Proposed decision (**B1**, `_METHOD_CONCENTRATION_MIN = 0.06`) **survives the
+challenge unchanged, and is strengthened by it.** The held-out evidence *reduces*
+the residual risk the Strongest-Argument-Against disclosed rather than confirming it:
+
+- **E-misattribution at 0.06 (held-out): 0 / 12 = 0.000.** No coincidental
+  double-fault window was mislabeled a method fault on unseen seeds.
+- **Clean separating gap, out-of-sample:** held-out E concentration max = **0.038**;
+  held-out C concentration min (method clearly down) = **0.067**; gap = **0.029**,
+  with 0.06 sitting inside it. The narrow, overlapping E/A-vs-C band the
+  Strongest-Argument-Against feared (in-sample tails ~0.12–0.14 vs C ~0.09) **did
+  not materialize** on held-out seeds — the out-of-sample distributions are more
+  cleanly separated than the in-sample ones, not less.
+- **Threshold sweep (held-out):** E-misattribution is 0.000 across *all* tested
+  thresholds; the C-correct side of the concentration gate is 1.000 at ≤ 0.06 and
+  begins to erode above it (0.980 at 0.07, 0.959 at 0.08–0.10). So the risk
+  direction is one-sided: pushing the constant *higher* is what would first cause a
+  real regression (true method faults read as independent PSPs); 0.06 is placed
+  correctly with more headroom against E over-attribution (0.022) than against C
+  under-detection (0.007).
+- **Thesis preserved out-of-sample:** `discrimination_result` on seeds 26–55 gives
+  incident A ARIADNE RCA **0.809** vs baseline **0.000** (money 95,910 vs 60,868) —
+  a decisive relational win the graph-blind baseline structurally cannot achieve —
+  and incident E RCA **0.847 vs 0.847** with **identical** money recovered (the
+  correct tie: ARIADNE does not invent a shared cause where none exists). B shows no
+  regression (0.776 vs 0.776).
+
+One limitation is recorded honestly rather than dissolved: the concentration gate
+never mislabels a true method fault as *independent PSPs* on held-out data, but a
+fraction of high-severity C windows are attributed to **bank** (not method) because
+a severe single-method fault can drive both of bank_A's PSPs below the detection
+threshold, giving bank_A coverage 1.0 / specificity ≥ `S_MIN`, so the shared-bank
+branch (step 1) legitimately pre-empts the method branch (step 2). This is a
+branch-ordering effect governed by `S_MIN` (DR-001), **not** by
+`_METHOD_CONCENTRATION_MIN`, and it is a defensible reading (all of that bank's PSPs
+are genuinely down); it is out of scope for this DR, which concerns only the
+method-vs-independent-PSP boundary.
 
 ## Decision
 
-_pending._ — **Accepted / Rejected / Deferred.**
+**Accepted.** Keep the B1 decision rule and `_METHOD_CONCENTRATION_MIN = 0.06`
+exactly as proposed. The held-out (seeds 26–55) validation answers the frozen
+Strongest-Argument-Against: the boundary is cleanly separable out-of-sample
+(0.029 gap), E-misattribution is 0.000, and the shared-bank thesis (A-win, E-tie)
+holds on unseen seeds. No change to the pinned formula, `S_MIN`, the graph, or the
+acting baseline; DR-001 remains Accepted and unedited. Alternatives B2 (pure
+reorder), B3 (probabilistic model), and B4 (do nothing / leave the pre-repair bug)
+remain rejected for the reasons in the frozen Options section, now reinforced by the
+one-sided held-out risk profile (moving the constant up regresses C; a fancier model
+is unnecessary for a cleanly separated boundary and was already warned against by
+DR-001's external challenge).
+
+- **Status:** Accepted
+- **Status history:** Proposed 2026-08-31 → Accepted 2026-09-05 (held-out validation, seeds 26–55)
 
 ## Consequences
 
-_pending._
+- **Locks** `_METHOD_CONCENTRATION_MIN = 0.06` as a documented build-time constant
+  (same category as `S_MIN`), re-derivable from any evaluation run. The seven
+  semantic regression tests in `tests/test_attribute_dr002.py` remain the guard;
+  they encode spread-vs-concentrated semantics, not target numbers.
+- **Records** that the anti-triviality guard (incident E) holds out-of-sample, which
+  is what makes the A-vs-E contrast — the anti-circularity guard DR-001 depends on —
+  sound rather than an in-sample artifact.
+- **Watch item:** the constant's correctness is a property of the current simulator
+  severity/noise ranges. If those ranges widen materially later, the clean gap could
+  shrink; re-run the held-out concentration measurement before trusting 0.06 under a
+  changed simulator. A foundation-level change to the branch structure would require
+  a new superseding DR, not an edit here.

@@ -142,6 +142,6 @@ same reasons → same DR, noted in Consequences.
 |------|-------|--------|
 | 000  | Template (not a decision) | — |
 | 001  | ARIADNE core design: graph size, attribution scoring, acting baseline | Accepted |
-| 002  | Attribution branch disambiguation (shared-dep / independent-PSP / method) | Proposed |
+| 002  | Attribution branch disambiguation (shared-dep / independent-PSP / method) | Accepted |
 
 _Update this table whenever a DR is added or its status changes._
