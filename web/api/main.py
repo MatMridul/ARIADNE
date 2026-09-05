@@ -283,8 +283,29 @@ def get_audit(
 
 
 # ---- static SPA mount (prod only; dev uses the Vite server) -------------------
+# Serve the built SPA with a proper SPA fallback: hashed assets under /assets are
+# served directly; any other non-/api path returns index.html so client-side deep
+# links and hard refreshes (/topology, /incidents, ...) work instead of 404ing.
+# /api/* is handled by the routes above and 404s cleanly here if unmatched.
 _DIST = os.path.join(os.path.dirname(__file__), "..", "dist")
 if os.path.isdir(_DIST):
+    from fastapi.responses import FileResponse
     from fastapi.staticfiles import StaticFiles
 
-    app.mount("/", StaticFiles(directory=_DIST, html=True), name="ui")
+    _ASSETS = os.path.join(_DIST, "assets")
+    if os.path.isdir(_ASSETS):
+        app.mount("/assets", StaticFiles(directory=_ASSETS), name="assets")
+
+    _INDEX = os.path.join(_DIST, "index.html")
+
+    @app.get("/{full_path:path}")
+    def spa_fallback(full_path: str):
+        # never swallow the API namespace
+        if full_path.startswith("api/") or full_path == "api":
+            raise HTTPException(status_code=404, detail="not found")
+        # serve a real static file if one exists (favicon, etc.)
+        candidate = os.path.join(_DIST, full_path)
+        if full_path and os.path.isfile(candidate):
+            return FileResponse(candidate)
+        # otherwise hand back the SPA shell — the client router takes over
+        return FileResponse(_INDEX)
