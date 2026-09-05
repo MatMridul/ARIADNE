@@ -4,7 +4,7 @@ import { Badge, StatusDot } from "@/design/ui";
 export function Legend() {
   return (
     <div
-      className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-lg border border-border-subtle bg-bg-surface/90 px-3 py-2.5 backdrop-blur"
+      className="pointer-events-none absolute bottom-14 left-3 z-10 rounded-lg border border-border-subtle bg-bg-surface/90 px-3 py-2.5 backdrop-blur"
       aria-label="Graph legend"
     >
       <div className="mb-1.5 text-2xs uppercase tracking-wide text-text-muted">Legend</div>

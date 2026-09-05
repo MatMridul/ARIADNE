@@ -14,6 +14,7 @@
  */
 import { BaseEdge, getBezierPath, type EdgeProps } from "@xyflow/react";
 import type { Health } from "@/design/ui";
+import { HEALTH_HEX, TOKENS } from "@/design/tokens";
 import type { FlowEdgeData } from "./types";
 
 const PARTICLES = 2; // hard cap per edge
@@ -25,12 +26,7 @@ const DUR: Record<Health, number> = {
   idle: 3.5,
 };
 
-const STROKE: Record<Health, string> = {
-  healthy: "#2dd4a7",
-  degraded: "#f5a623",
-  down: "#f45b6c",
-  idle: "#2a3646",
-};
+const STROKE: Record<Health, string> = HEALTH_HEX;
 
 export function FlowEdge({
   id,
@@ -59,7 +55,11 @@ export function FlowEdge({
   const dur = DUR[health];
   const showParticles = dur > 0;
 
-  const baseColor = highlighted ? "#6d8bff" : reroute ? "#2dd4a7" : STROKE[health];
+  const baseColor = highlighted
+    ? TOKENS.status.accent
+    : reroute
+    ? TOKENS.status.healthy
+    : STROKE[health];
   const width = highlighted || reroute ? 2.5 : health === "down" ? 1 : 1.5;
   const opacity = health === "down" ? 0.35 : 0.8;
 

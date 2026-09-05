@@ -34,7 +34,14 @@ body {
   background: transparent;
 }
 
-/* number/tabular alignment for metrics */
+/* Large human-facing figures: tabular Inter (aligned, NOT terminal-mono). */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv01" 1;
+  letter-spacing: -0.01em;
+}
+
+/* System telemetry / IDs / code readouts: tabular monospace. */
 .tabular {
   font-variant-numeric: tabular-nums;
   font-family: theme("fontFamily.mono");

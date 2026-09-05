@@ -21,9 +21,11 @@ import type { TopoEdge, TopoNode } from "./types";
 export function PaymentGraph({
   nodes,
   edges,
+  showLegend = true,
 }: {
   nodes: TopoNode[];
   edges: TopoEdge[];
+  showLegend?: boolean;
 }) {
   // stable references to the type maps
   const nt = useMemo(() => nodeTypes, []);
@@ -50,7 +52,7 @@ export function PaymentGraph({
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1f2937" />
         <Controls showInteractive={false} className="!border-border-subtle !bg-bg-surface" />
-        <Legend />
+        {showLegend && <Legend />}
       </ReactFlow>
     </div>
   );

@@ -15,16 +15,17 @@ import type {
 } from "./types";
 
 const RING: Record<Health, string> = {
-  healthy: "ring-healthy/50",
+  healthy: "ring-healthy/40",
   degraded: "ring-degraded/70",
   down: "ring-down/80",
-  idle: "ring-border-strong/40",
+  idle: "ring-border-strong/30",
 };
 
+// Restrained depth — a thin status-tinted edge, not a neon halo (P1-5).
 const GLOW: Record<Health, string> = {
-  healthy: "shadow-[0_0_0_1px_rgba(45,212,167,0.15)]",
-  degraded: "shadow-[0_0_18px_-2px_rgba(245,166,35,0.55)]",
-  down: "shadow-[0_0_22px_-2px_rgba(244,91,108,0.6)]",
+  healthy: "",
+  degraded: "shadow-[0_0_0_1px_rgba(245,166,35,0.35)]",
+  down: "shadow-[0_0_0_1px_rgba(244,91,108,0.45)]",
   idle: "",
 };
 
@@ -69,8 +70,13 @@ export function MerchantNode({ data }: NodeProps) {
   return (
     <Shell health="healthy" className="w-[150px]">
       <Handle type="source" position={Position.Right} className="!bg-border-strong" />
-      <div className="flex items-center gap-2">
-        <span className="text-lg" aria-hidden>🏬</span>
+      <div className="flex items-center gap-2.5">
+        <span
+          className="flex h-6 w-6 items-center justify-center rounded-md border border-border-strong bg-bg-raised text-[10px] font-semibold tracking-tight text-text-secondary"
+          aria-hidden
+        >
+          MX
+        </span>
         <div>
           <div className="text-2xs uppercase tracking-wide text-text-muted">Merchant</div>
           <div className="text-sm font-semibold text-text-primary">{d.label}</div>
