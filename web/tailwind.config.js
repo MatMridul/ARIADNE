@@ -4,29 +4,33 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ARIADNE control-room palette — deep slate surfaces, restrained accents.
+        // ARIADNE instrument substrate — graphite / blue-black, cool and deep.
+        // A real elevation ladder (base -> surface -> raised -> hover), not flat slate.
         bg: {
-          base: "#0a0e14",
-          surface: "#111722",
-          raised: "#161d2b",
-          hover: "#1c2534",
+          base: "#080a0f",
+          surface: "#0d1017",
+          raised: "#12161f",
+          hover: "#1a1f2b",
+          inset: "#05070b",
         },
         border: {
-          subtle: "#1f2937",
-          DEFAULT: "#2a3646",
-          strong: "#3a4a5f",
+          subtle: "#171b24",
+          DEFAULT: "#232a36",
+          strong: "#333d4e",
         },
         text: {
-          primary: "#e6edf3",
-          secondary: "#9aa7b8",
-          muted: "#5e6b7e",
+          primary: "#eef2f6",
+          secondary: "#8b96a6",
+          muted: "#59626f",
         },
-        // semantic status language
-        healthy: "#2dd4a7",
-        degraded: "#f5a623",
-        down: "#f45b6c",
-        info: "#4f9cf9",
-        accent: "#6d8bff",
+        // semantic status — communicates state, never decoration.
+        healthy: "#3ad19a",
+        degraded: "#f2a33c",
+        down: "#f65e6e",
+        info: "#5aa2f0",
+        // accent = selection/focus only. A cool steel-cyan, NOT periwinkle,
+        // NOT gold — it must not become the brand's primary color.
+        accent: "#4db6c9",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

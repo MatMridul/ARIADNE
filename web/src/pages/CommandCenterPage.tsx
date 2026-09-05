@@ -13,7 +13,7 @@
  */
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Badge, StatusDot, cn, inr } from "@/design/ui";
+import { cn, inr } from "@/design/ui";
 import { useSimulate, useTopology, type SimulateRequest } from "@/lib";
 import { CommandTopology } from "@/topology";
 import {
@@ -53,105 +53,106 @@ export function CommandCenterPage() {
   const successRate = windowSuccessRate(rep);
   const incidentActive = rep.detection.dropped_nodes.length > 0;
 
-  // claim status is SEPARATE from confidence (P: do not conflate)
-  const claimLabel =
-    attr.root_cause_kind === "none" ? "no cause" : `${attr.claim_type} · derived`;
-
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
-      {/* ── run context strip ─────────────────────────────────────────── */}
-      <div className="flex items-center justify-between border-b border-border-subtle px-5 py-2.5">
+    <div className="flex h-full flex-col bg-bg-base">
+      {/* ── quiet global header ───────────────────────────────────────── */}
+      <div className="flex items-center justify-between border-b border-border-subtle px-6 py-3">
         <div className="flex items-baseline gap-3">
-          <h1 className="text-sm font-semibold tracking-tight text-text-primary">Command Center</h1>
-          <span className="tabular text-2xs text-text-muted">
-            {res.incident.incident_type} · seed {req.seed} · τ{req.intervention_threshold.toFixed(2)} · ariadne
+          <h1 className="text-[13px] font-semibold uppercase tracking-[0.14em] text-text-secondary">
+            Command
+          </h1>
+          <span className="tabular text-[11px] text-text-muted">
+            {res.incident.incident_type} · seed {req.seed} · τ{req.intervention_threshold.toFixed(2)}
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="tabular text-2xs text-text-muted">
+        <div className="flex items-center gap-4">
+          <span className="tabular text-[11px] text-text-muted">
             window {rep.window}/{res.incident.n_windows}
           </span>
-          <Badge tone={incidentActive ? "down" : "healthy"}>
-            <StatusDot health={incidentActive ? "down" : "healthy"} pulse={incidentActive} />
-            {incidentActive ? "incident active" : "nominal"}
-          </Badge>
+          <span className="flex items-center gap-1.5">
+            <span className={cn("h-1.5 w-1.5 rounded-full", incidentActive ? "bg-down" : "bg-healthy")} />
+            <span className="text-[11px] font-medium text-text-secondary">
+              {incidentActive ? "incident active" : "nominal"}
+            </span>
+          </span>
         </div>
       </div>
 
-      {/* ── KPI ledger (a thin instrument row, not four cards) ─────────── */}
-      <div className="grid grid-cols-2 border-b border-border-subtle sm:grid-cols-4">
-        <Kpi label="Revenue recovered" value={inr(res.money_recovered)} tone={negative ? "down" : "healthy"} hint="measured counterfactual" />
-        <Kpi label="Expected recovery" value={inr(action.expected_recovery)} tone="default" hint="estimate" divider />
-        <Kpi label="Success rate" value={`${(successRate * 100).toFixed(1)}%`} tone={successRate < 0.9 ? "degraded" : "healthy"} hint={`window ${rep.window}`} divider />
-        <Kpi label="Incident" value={res.incident.incident_type.split("_")[0]} tone={incidentActive ? "down" : "default"} hint={res.incident.target_id ?? "—"} divider />
+      {/* ── metric readout (baseline-aligned figures, NOT tiles) ──────── */}
+      <div className="flex items-stretch gap-8 border-b border-border-subtle px-6 py-3">
+        <Kpi label="Recovered" value={inr(res.money_recovered)} tone={negative ? "down" : "healthy"} sub="counterfactual" />
+        <Kpi label="Expected" value={inr(action.expected_recovery)} sub="estimate" />
+        <Kpi label="Success" value={`${(successRate * 100).toFixed(1)}%`} tone={successRate < 0.9 ? "degraded" : "default"} sub={`window ${rep.window}`} />
+        <Kpi label="Incident" value={res.incident.incident_type.split("_")[0]} tone={incidentActive ? "down" : "default"} sub={res.incident.target_id ?? "—"} />
       </div>
 
-      {/* ── instrument body: graph (protagonist) + intelligence rail ──── */}
+      {/* ── instrument body: network (protagonist) + reasoning rail ───── */}
       <div className="flex min-h-0 flex-1">
         {/* PRIMARY: living payment network */}
-        <section className="relative min-w-0 flex-1 border-r border-border-subtle" aria-label="Living payment network">
-          <div className="absolute left-4 top-3 z-10 flex items-center gap-2">
-            <span className="text-2xs uppercase tracking-widest text-text-muted">Payment network</span>
-            <Badge tone="info">Bank-A shared · thesis</Badge>
+        <section className="relative min-w-0 flex-1" aria-label="Living payment network">
+          <div className="pointer-events-none absolute left-5 top-4 z-10 flex items-center gap-2.5">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">
+              Payment network
+            </span>
+            <span className="h-3 w-px bg-border-strong" />
+            <span className="text-[10px] uppercase tracking-wide text-info">Bank-A · shared dependency</span>
           </div>
           <CommandTopology topology={topo.data} sim={res} />
         </section>
 
-        {/* RIGHT INTELLIGENCE RAIL — explains the graph */}
-        <aside className="flex w-[380px] shrink-0 flex-col overflow-y-auto bg-bg-base" aria-label="Diagnosis intelligence">
-          {/* incident */}
+        {/* RIGHT REASONING RAIL — an operational readout, hairline-divided ── */}
+        <aside className="flex w-[360px] shrink-0 flex-col overflow-y-auto border-l border-border-subtle bg-bg-inset" aria-label="Diagnosis readout">
           <RailBlock label="Incident">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-text-primary">
+              <span className="text-[15px] font-semibold tracking-tight text-text-primary">
                 {res.incident.target_id ? prettyNodeId(res.incident.target_id) : "—"} degradation
               </span>
-              <Badge tone={incidentActive ? "down" : "neutral"} className="font-mono">{res.incident.incident_type.split("_")[0]}</Badge>
+              <span className="tabular text-[11px] text-down">{res.incident.incident_type.split("_")[0]}</span>
             </div>
-            <p className="mt-1 text-2xs text-text-muted">
+            <p className="tabular mt-1 text-[11px] text-text-muted">
               windows {res.incident.start_window}–{res.incident.end_window} · {rep.detection.dropped_nodes.length} node(s) breached
             </p>
           </RailBlock>
 
-          {/* diagnosis + confidence (SEPARATE concepts) */}
           <RailBlock label="Diagnosis">
             <div className="flex items-center gap-4">
-              <ConfidenceRing value={attr.confidence} size={84} label="confidence" />
+              <ConfidenceRing value={attr.confidence} size={72} label="conf" />
               <div className="min-w-0">
-                <div className="text-2xs uppercase tracking-wide text-text-muted">root cause</div>
-                <div className="truncate text-xl font-semibold text-text-primary">
+                <div className="text-[10px] uppercase tracking-wide text-text-muted">root cause</div>
+                <div className="truncate text-xl font-semibold tracking-tight text-text-primary">
                   {attr.root_cause_kind === "none" ? "No single cause" : prettyNodeId(attr.root_cause_id)}
                 </div>
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <Badge tone={attr.root_cause_kind === "bank" ? "down" : attr.root_cause_kind === "none" ? "neutral" : "degraded"} className="font-mono">
+                <div className="mt-1.5 flex items-center gap-2 text-[11px]">
+                  <span className="text-text-muted">kind</span>
+                  <span className={cn("tabular font-medium", attr.root_cause_kind === "bank" ? "text-down" : "text-text-secondary")}>
                     {attr.root_cause_kind}
-                  </Badge>
-                  {/* claim status is its own axis — not merged with confidence */}
-                  <Badge tone="info">{claimLabel}</Badge>
+                  </span>
+                  <span className="text-border-strong">·</span>
+                  <span className="text-text-muted">claim</span>
+                  <span className="tabular font-medium text-info">{attr.claim_type}</span>
                 </div>
               </div>
             </div>
           </RailBlock>
 
-          {/* evidence path — verbatim */}
-          <RailBlock label="Evidence path">
+          <RailBlock label="Evidence">
             <ol className="space-y-1.5">
               {attr.evidence_path.map((line, i) => (
-                <li key={i} className="flex gap-2 text-2xs leading-snug">
-                  <span className="tabular shrink-0 text-text-muted">{i + 1}</span>
-                  <span className={cn("font-mono", i === attr.evidence_path.length - 1 ? "text-text-primary" : "text-text-secondary")}>{line}</span>
+                <li key={i} className="flex gap-2 text-[11px] leading-snug">
+                  <span className="tabular shrink-0 text-text-muted">{String(i + 1).padStart(2, "0")}</span>
+                  <span className={cn("tabular", i === attr.evidence_path.length - 1 ? "text-text-primary" : "text-text-secondary")}>{line}</span>
                 </li>
               ))}
             </ol>
           </RailBlock>
 
-          {/* recovery — operational control, not a CTA card */}
-          <div className="border-t border-border-subtle">
+          <div className="flex-1 border-t border-border-subtle">
             <RecoveryConsole action={action} moneyRecovered={res.money_recovered} />
           </div>
         </aside>
       </div>
 
-      {/* ── causal ribbon: DETECTED → DIAGNOSED → INTERVENTION → RECOVERED ── */}
+      {/* ── causal sequence: DETECTED → DIAGNOSED → INTERVENTION → RECOVERED ── */}
       <CausalRibbon
         detected={incidentActive}
         diagnosed={attr.root_cause_kind !== "none"}
@@ -169,22 +170,20 @@ function Kpi({
   label,
   value,
   tone = "default",
-  hint,
-  divider,
+  sub,
 }: {
   label: string;
   value: React.ReactNode;
   tone?: "healthy" | "degraded" | "down" | "default";
-  hint?: string;
-  divider?: boolean;
+  sub?: string;
 }) {
   const color =
     tone === "healthy" ? "text-healthy" : tone === "degraded" ? "text-degraded" : tone === "down" ? "text-down" : "text-text-primary";
   return (
-    <div className={cn("px-5 py-3", divider && "border-l border-border-subtle")}>
-      <div className="text-2xs uppercase tracking-wide text-text-muted">{label}</div>
-      <div className={cn("tnum mt-0.5 text-2xl font-semibold", color)}>{value}</div>
-      {hint && <div className="tabular mt-0.5 text-2xs text-text-muted">{hint}</div>}
+    <div className="flex flex-col justify-center">
+      <div className="text-[10px] font-medium uppercase tracking-[0.14em] text-text-muted">{label}</div>
+      <div className={cn("tnum text-[19px] font-semibold leading-tight tracking-tight", color)}>{value}</div>
+      {sub && <div className="tabular text-[10px] text-text-muted">{sub}</div>}
     </div>
   );
 }
@@ -192,7 +191,7 @@ function Kpi({
 function RailBlock({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="border-b border-border-subtle px-5 py-4">
-      <div className="mb-2 text-2xs font-semibold uppercase tracking-widest text-text-muted">{label}</div>
+      <div className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">{label}</div>
       {children}
     </div>
   );

@@ -32,7 +32,7 @@ export function PaymentGraph({
   const et = useMemo(() => edgeTypes, []);
 
   return (
-    <div className="relative h-full w-full" aria-label="Payment dependency graph" role="img">
+    <div className="instrument-grid relative h-full w-full" aria-label="Payment dependency graph" role="img">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -40,7 +40,7 @@ export function PaymentGraph({
         edgeTypes={et}
         colorMode={"dark" as ColorMode}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
+        fitViewOptions={{ padding: 0.24 }}
         proOptions={{ hideAttribution: true }}
         nodesDraggable={false}
         nodesConnectable={false}
@@ -50,10 +50,11 @@ export function PaymentGraph({
         minZoom={0.4}
         maxZoom={1.6}
       >
-        <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#1f2937" />
+        <Background variant={BackgroundVariant.Dots} gap={40} size={0} color="transparent" />
         <Controls showInteractive={false} className="!border-border-subtle !bg-bg-surface" />
         {showLegend && <Legend />}
       </ReactFlow>
+      <div className="instrument-vignette pointer-events-none absolute inset-0" />
     </div>
   );
 }

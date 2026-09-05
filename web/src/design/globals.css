@@ -23,8 +23,8 @@ body {
 
 /* thin control-room scrollbars */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
 }
 ::-webkit-scrollbar-thumb {
   background: theme("colors.border.DEFAULT");
@@ -32,6 +32,20 @@ body {
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+}
+
+/* Instrument canvas: a faint engineering grid + vignette. Used behind the
+   living payment network so it reads as an operational surface, not a card. */
+.instrument-grid {
+  background-color: theme("colors.bg.inset");
+  background-image:
+    linear-gradient(theme("colors.border.subtle") 1px, transparent 1px),
+    linear-gradient(90deg, theme("colors.border.subtle") 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: -1px -1px;
+}
+.instrument-vignette {
+  box-shadow: inset 0 0 160px 40px rgba(0, 0, 0, 0.55);
 }
 
 /* Large human-facing figures: tabular Inter (aligned, NOT terminal-mono). */
