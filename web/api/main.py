@@ -21,7 +21,7 @@ from ariadne.decide.policy import select_action
 from ariadne.diagnosis.attribute import attribute
 from ariadne.diagnosis.detect import detect
 from ariadne.eval.run import DETECT_THRESHOLD, run_once_trace
-from ariadne.eval.sweep import run_sweep
+from ariadne.eval.sweep_cache import get_sweep
 from ariadne.model.entities import Method
 from ariadne.model.graph import default_graph
 from ariadne.simulator.config import SimConfig
@@ -207,7 +207,11 @@ def get_evaluation(seeds: Optional[str] = None, thresholds: Optional[str] = None
             thr = tuple(float(t) for t in thresholds.split(",") if t.strip())
         except ValueError:
             raise HTTPException(status_code=400, detail="thresholds must be comma-separated floats")
-    return run_sweep(seeds=seed_list, thresholds=thr)
+    # The engine is fully deterministic, so the sweep output is memoizable. The
+    # default (expensive) sweep is served from a precomputed on-disk cache of the
+    # REAL run_sweep output; custom seed/threshold queries compute live. No
+    # fabrication or hardcoding — the cache stores exactly what the engine produced.
+    return get_sweep(seeds=seed_list, thresholds=thr)
 
 
 # ---- GET /api/incidents (static catalog) --------------------------------------

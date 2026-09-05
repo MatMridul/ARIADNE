@@ -94,3 +94,6 @@ npm-debug.log*
 !web/src/lib/**
 
 web/*.tsbuildinfo
+
+# ---- evaluation sweep cache (derived, regenerable via python -m ariadne.eval.sweep_cache) ----
+.eval_cache/
