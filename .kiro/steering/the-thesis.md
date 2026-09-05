@@ -1,6 +1,6 @@
-# ARIADNE — The Thesis You Are Testing (steering)
+# ARIA — The Thesis You Are Testing (steering)
 
-Keep this in mind while building. ARIADNE is not a payment dashboard; it is an
+Keep this in mind while building. ARIA is not a payment dashboard; it is an
 experiment with a falsifiable claim.
 
 ## The claim
@@ -15,11 +15,11 @@ The **shared-bank scenario** is the concrete test:
 
 - Two payment companies (PSPs) secretly settle through the **same bank**.
 - When that bank degrades, failures appear across **both** PSPs at once.
-- **ARIADNE** (knows the graph) should diagnose "the bank is down" — one cause.
+- **ARIA** (knows the graph) should diagnose "the bank is down" — one cause.
 - The **baseline** (same data, no graph) can only see "two PSPs dropped" — and
   will blame each PSP independently.
 
-ARIADNE must show **measurable improvement over the baseline on this scenario**,
+ARIA must show **measurable improvement over the baseline on this scenario**,
 and must **not regress** on the single-PSP control scenario (where blaming the one
 PSP is correct and inventing a shared cause would be wrong).
 
@@ -27,14 +27,14 @@ PSP is correct and inventing a shared cause would be wrong).
 *different* banks can drop at the same time by pure chance. The correct answer then
 is two *independent* faults, NOT a shared cause. A system that merely counts
 correlated failures would wrongly cry "shared cause"; only real topology reasoning
-gets both the shared-bank case (A) and the coincidental case (E) right. ARIADNE
+gets both the shared-bank case (A) and the coincidental case (E) right. ARIA
 must NOT over-attribute to a bank on E. The A-vs-E contrast is what proves the
 graph reasons rather than counts.
 
 ## Both outcomes are wins for engineering knowledge
 
-- **ARIADNE beats the baseline on the shared-bank case** → the map mattered.
-- **ARIADNE does not beat it** → we learned the map didn't add enough information
+- **ARIA beats the baseline on the shared-bank case** → the map mattered.
+- **ARIA does not beat it** → we learned the map didn't add enough information
   to justify its complexity. That is real, honest engineering knowledge.
 
 So: never rig the experiment to make the graph win. Write the eval first, run it

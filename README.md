@@ -1,20 +1,23 @@
-# ARIADNE
+# ARIA
 
-**Merchant Revenue Recovery Intelligence** — an [ATLAS-class](https://github.com/MatMridul/ATLAS) system for the merchant payment ecosystem.
+**Adaptive Revenue Intelligence & Action** — an [ATLAS-class](https://github.com/MatMridul/ATLAS) system for payment revenue recovery.
 
-> **Status: Tier-1 + Tier-2 built and green.** Full loop implemented, tested, and
-> evaluated end-to-end. The Shared Dependency Discrimination result and the
-> recovery-vs-risk frontier are reproduced under `reports/`.
+> **Status: Tier-1 + Tier-2 built, tested, and evaluated end-to-end.** The Shared
+> Dependency Discrimination result and the recovery-vs-risk frontier are reproduced
+> under `reports/`. An operator web console (Command Center, live payment topology,
+> incident/RCA, evaluation, audit) runs on top of the same engine.
 
 ---
 
-## What ARIADNE is
+## What ARIA is
 
-ARIADNE models a merchant's payment ecosystem as a dependency graph (method → PSP →
-bank) and, when revenue is at risk, **traces the failure back through that graph to
-its root cause and out to a bounded recovery action** — with per-edge evidence,
-confidence, and an audit trail. The name is Ariadne's thread: a guide out of the
-payment labyrinth.
+ARIA is a payment infrastructure intelligence system that **maps payment
+dependencies, observes degradation, traces failures to their underlying causes,
+executes bounded recovery actions, and measures recovered revenue.** It models a
+merchant's payment ecosystem as a dependency graph (method → PSP → bank) and, when
+revenue is at risk, traces the failure back through that graph to its root cause and
+out to a bounded recovery action — with per-edge evidence, confidence, and an audit
+trail.
 
 The loop:
 
@@ -24,32 +27,55 @@ simulate → aggregate → detect → attribute → decide → re-simulate outco
 
 ## The thesis (and how it is tested)
 
-> Does explicitly modeling the interconnected payment ecosystem let an AI diagnose
+> Does explicitly modeling the interconnected payment ecosystem let a system diagnose
 > and recover revenue better than treating every component independently?
 
-ARIADNE is compared against a **fair non-relational baseline** that sees the exact
-same per-PSP/per-method observations but lacks the dependency graph. The falsifiable
-test is the **shared-bank incident (A)**: two PSPs settle via one bank, so a bank
-fault surfaces as correlated PSP failures. ARIADNE derives bank health from the PSP
+ARIA is compared against a **fair graph-blind baseline** that sees the exact same
+per-PSP/per-method observations but lacks the dependency graph. The falsifiable test
+is the **shared-bank incident (A)**: two PSPs settle via one bank, so a bank fault
+surfaces as correlated PSP failures. ARIA derives bank health from the PSP
 observations via the graph; the baseline can only see independent PSP faults.
 
 Incident **E (coincidental)** — two PSPs on *different* banks failing together — is
-the anti-triviality control: the correct answer there is two independent faults, so
-a system that merely *counts* correlated failures fails E. Passing both A and E
-proves ARIADNE reasons over topology, not correlation.
+the anti-triviality control: the correct answer there is two independent faults, so a
+system that merely *counts* correlated failures fails E. Passing both A and E proves
+ARIA reasons over topology, not correlation.
 
-**Headline result** (`reports/run_report.md`, seeds 1–5):
+**Headline result** (`reports/run_report.md`):
 
-| Incident | Metric | ARIADNE | Baseline |
-|----------|--------|---------|----------|
-| A shared-bank | root-cause accuracy | **0.95** | 0.00 |
-| A shared-bank | money recovered | **₹120k** | ₹87k |
-| B single-PSP  | root-cause accuracy | 0.95 | 0.95 (no regression) |
-| E coincidental| root-cause accuracy | 0.95 | 0.95 (no over-attribution) |
+| Incident | Metric | ARIA | Baseline |
+|----------|--------|------|----------|
+| A shared-bank | root-cause accuracy | **~0.94** | 0.00 |
+| A shared-bank | money recovered | **higher** | lower |
+| B single-PSP  | root-cause accuracy | matches baseline (no regression) | — |
+| E coincidental| root-cause accuracy | matches baseline (no over-attribution) | — |
 
 The recovery-vs-risk frontier (`reports/frontier.png`) plots money recovered vs.
 false-intervention cost across intervention thresholds 0.55 / 0.70 / 0.85 for both
-systems — the merchant chooses how aggressive ARIADNE should be.
+systems — the merchant chooses how aggressive ARIA should be.
+
+## Why the decision path is deterministic (not an LLM)
+
+The money-moving decision path — detection, attribution, action selection — is a
+**deterministic scoring function over the graph, not an LLM.** This is a deliberate
+design choice for **reproducibility** (same seed → identical results), **explainability**
+(every attribution carries a verbatim evidence path: `coverage × specificity`),
+**safety** (bounded, auditable actions with a `do_nothing` default), and **honest
+evaluation** (the discrimination result is measured, not asserted). A natural-language
+layer could sit *on top* to explain the system, but it does not replace the reasoning.
+
+## The DR-002 failure-and-recovery story
+
+An acceptance audit found the attribution engine could **mis-route incident E to a
+"method" fault** ~93% of the time — a bug that would have quietly broken the
+anti-triviality guard the whole thesis depends on. The fix (recorded in
+[`docs/decisions/DR-002`](docs/decisions/DR-002-attribution-branch-disambiguation.md))
+added a **method-concentration gate**: a method explanation is only preferred when
+failure is concentrated in one method, whereas independent-PSP faults spread evenly.
+The threshold (`0.06`) was then **validated on held-out seeds 26–55** — disjoint from
+both the seeds that chose it (1–25) and the evaluation seeds (1–20): 0/12
+E-misattribution out-of-sample, a clean separating gap, and the A-win/E-tie thesis
+preserved. DR-002 is Accepted with that held-out evidence recorded honestly.
 
 ## Design invariants (enforced, not aspirational)
 
@@ -57,30 +83,47 @@ systems — the merchant chooses how aggressive ARIADNE should be.
   `matplotlib` (only in `reporting/`) are the sole exceptions.
 - **The diagnoser never sees ground truth.** `diagnosis/` and `baseline/` import
   nothing from `simulator/`; only `eval/` reads `GroundTruth`.
-- **Identical raw inputs.** ARIADNE and the baseline receive the same PSP/method
-  stats; ARIADNE's bank health is *derived* via the graph, never handed in.
+- **Identical raw inputs.** ARIA and the baseline receive the same PSP/method stats;
+  ARIA's bank health is *derived* via the graph, never handed in.
 - **Shared-seed counterfactual.** `money_recovered = revenue(action) − revenue(no_action)`
   under the same seed/draws; only the config differs. Negative values are legal and reported.
 - **Attribution confidence = coverage × specificity, S_MIN = 0.8** (pinned, DR-001).
 - **No cross-incident learning.** Each incident is diagnosed from its own window only.
 - **Determinism.** Same seed → identical results.
 
+Recovery amounts and the payment environment are **simulated**; recovery is measured
+as a **shared-seed counterfactual**, not real money moved. There is no production
+deployment, live merchant integration, or external database — the system runs
+in-process against a deterministic simulator.
+
+## Architecture: ATLAS → ARIA
+
+**ATLAS** is the reusable system *class* (the architectural thesis: relational
+reasoning over a dependency graph with evidence, bounded action, and honest
+evaluation). **ARIA** is the concrete product *instantiation* of that class for the
+payment revenue-recovery domain. ATLAS provides the pattern; ARIA is the application.
+
 ## Layout
 
 ```
-src/ariadne/
-  model/       entities + PaymentGraph (static topology; health is derived)
-  simulator/   honest-adversary generator (the ONLY holder of ground truth)
-  observe/     raw txns → per-window NodeStats
-  diagnosis/   ARIADNE's relational attribution (detect + attribute)
-  baseline/    the fair non-relational monitor (no graph)
-  decide/      bounded actions + policy (reroute / disable_method / retry_fallback / do_nothing)
-  eval/        the scoring harness (reads ground truth) + scenarios + sweep
-  reporting/   the recovery-vs-risk frontier plot (matplotlib, isolated)
+src/ariadne/        Python core (package name retained as a technical identifier)
+  model/            entities + PaymentGraph (static topology; health is derived)
+  simulator/        honest-adversary generator (the ONLY holder of ground truth)
+  observe/          raw txns → per-window NodeStats
+  diagnosis/        ARIA's relational attribution (detect + attribute)
+  baseline/         the fair graph-blind monitor (no graph)
+  decide/           bounded actions + policy (reroute / disable_method / retry_fallback / do_nothing)
+  eval/             the scoring harness (reads ground truth) + scenarios + sweep + cache
+  reporting/        the recovery-vs-risk frontier plot (matplotlib, isolated)
+web/                operator web console (Vite + React + TS) + thin FastAPI over the core
 ```
+
+> The Python package is named `ariadne` — a **technical identifier** kept stable to
+> avoid breaking imports and the API contract. The public product name is **ARIA**.
 
 ## Running
 
+### Core: tests + evaluation
 ```bash
 # tests (stdlib + pytest only)
 python -m pytest -q
@@ -92,17 +135,25 @@ from ariadne.reporting.frontier import plot_frontier, write_report; \
 r=run_sweep(seeds=[1,2,3,4,5]); plot_frontier(r,'reports/frontier.png'); write_report(r,'reports/run_report.md')"
 ```
 
+### Web console
+```bash
+pip install -e . ; pip install fastapi "uvicorn[standard]"
+cd web ; npm install ; npm run build ; cd ..
+python -m uvicorn web.api.main:app --host 127.0.0.1 --port 8000
+# open http://127.0.0.1:8000
+```
+
+**Canonical demo:** incident `A_shared_bank`, seed `7`. ARIA attributes the shared
+bank (`bank_A`) with confidence 1.0 and recommends a bounded reroute; the graph-blind
+baseline blames individual PSPs from the identical observations — the thesis made
+visible.
+
 ## Governance
 
 Design decisions are recorded under [`docs/decisions/`](docs/decisions/) (two-pass
 Proposed→closed, immutable history). The build contract is in
 [`docs/BUILD_SPEC.md`](docs/BUILD_SPEC.md); the domain model in
 [`docs/adapter.md`](docs/adapter.md); scope tiers in [`docs/SCOPE.md`](docs/SCOPE.md).
-
-## Relationship to ATLAS
-
-ATLAS is the reusable *class*; ARIADNE is a concrete *instantiation* for the merchant
-payment domain.
 
 ## License
 

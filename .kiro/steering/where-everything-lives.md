@@ -1,6 +1,6 @@
-# ARIADNE — Where Everything Lives (spec pointer)
+# ARIA — Where Everything Lives (spec pointer)
 
-You are building ARIADNE in `C:\Mridul\Programs\ARIADNE`. The full, frozen,
+You are building ARIA in `C:\Mridul\Programs\ARIA`. The full, frozen,
 ratified spec is on disk. Read on demand — do NOT re-read every turn (that wastes
 budget). Start here, in this order:
 

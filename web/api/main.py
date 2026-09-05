@@ -1,4 +1,4 @@
-"""ARIADNE Web API — a THIN serialization boundary over the Python core.
+"""ARIA Web API — a THIN serialization boundary over the Python core.
 
 Every handler calls existing functions in `ariadne.*` and reshapes their output to
 the JSON in web/CONTRACT.md. NO domain logic lives here (vision §16). The core is
@@ -27,7 +27,7 @@ from ariadne.model.graph import default_graph
 from ariadne.simulator.config import SimConfig
 from ariadne.simulator.incidents import IncidentType, make_incident
 
-app = FastAPI(title="ARIADNE API", version="1.0.0")
+app = FastAPI(title="ARIA API", version="1.0.0")
 
 # CORS only matters in dev (Vite on :5173 -> API on :8000). In prod the SPA is
 # served same-origin by this app, so this is harmless either way.

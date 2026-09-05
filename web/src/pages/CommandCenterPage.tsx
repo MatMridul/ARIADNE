@@ -1,4 +1,4 @@
-/** Command Center — ARIADNE's operating instrument.
+/** Command Center — ARIA's operating instrument.
  *
  * Recomposed (emergency submission pass): NOT a card grid. The living payment
  * network is the protagonist and occupies the majority of the viewport; a right

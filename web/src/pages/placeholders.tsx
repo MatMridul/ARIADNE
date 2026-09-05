@@ -25,7 +25,7 @@ export function IncidentsPage(): ReactNode {
   return <Scaffold title="Incidents & RCA" note="Incident timeline → shared dependency → root cause → evidence → recovery action → measured outcome." />;
 }
 export function EvaluationPage(): ReactNode {
-  return <Scaffold title="Evaluation" note="ARIADNE vs graph-blind baseline: discrimination result, recovery-vs-risk frontier, safety metrics." />;
+  return <Scaffold title="Evaluation" note="ARIA vs graph-blind baseline: discrimination result, recovery-vs-risk frontier, safety metrics." />;
 }
 export function AuditPage(): ReactNode {
   return <Scaffold title="Audit Log" note="Bounded, audited actions with decision_id, evidence path, and confidence (derived-from-run)." />;

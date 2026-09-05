@@ -32,7 +32,7 @@ export function EvaluationView() {
       <header>
         <h1 className="text-lg font-semibold text-text-primary">Evaluation</h1>
         <p className="mt-1 max-w-3xl text-2xs text-text-muted">
-          ARIADNE vs a fair graph-blind baseline. The baseline sees every per-entity metric but not the
+          ARIA vs a fair graph-blind baseline. The baseline sees every per-entity metric but not the
           dependency graph, so only relational reasoning is varied. All figures are measured across the
           seed batch — nothing on this page is fabricated.
         </p>

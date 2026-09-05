@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // ARIADNE instrument substrate — graphite / blue-black, cool and deep.
+        // ARIA instrument substrate — graphite / blue-black, cool and deep.
         // A real elevation ladder (base -> surface -> raised -> hover), not flat slate.
         bg: {
           base: "#080a0f",

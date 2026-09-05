@@ -20,7 +20,7 @@ import {
 import { Card, CardHeader } from "@/design/ui";
 import { inr } from "./format";
 
-type Row = FrontierPoint & { system: "ARIADNE" | "Baseline" };
+type Row = FrontierPoint & { system: "ARIA" | "Baseline" };
 
 function toRows(points: FrontierPoint[], system: Row["system"]): Row[] {
   return [...points]
@@ -63,7 +63,7 @@ function FrontierTooltip({ active, payload }: any) {
 }
 
 export function FrontierPanel({ frontier }: { frontier: Evaluation["frontier"] }) {
-  const ariadne = toRows(frontier.ariadne, "ARIADNE");
+  const ariadne = toRows(frontier.ariadne, "ARIA");
   const baseline = toRows(frontier.baseline, "Baseline");
 
   return (
@@ -100,7 +100,7 @@ export function FrontierPanel({ frontier }: { frontier: Evaluation["frontier"] }
               <Line
                 data={ariadne}
                 dataKey="money_recovered"
-                name="ARIADNE"
+                name="ARIA"
                 stroke="#6d8bff"
                 strokeWidth={2}
                 dot={{ r: 4, fill: "#6d8bff" }}
@@ -125,7 +125,7 @@ export function FrontierPanel({ frontier }: { frontier: Evaluation["frontier"] }
           </ResponsiveContainer>
         </div>
         <p className="mt-2 text-2xs text-text-muted">
-          Up-and-left is better: more money recovered for less false-intervention cost. Each ARIADNE
+          Up-and-left is better: more money recovered for less false-intervention cost. Each ARIA
           point is labelled with its threshold τ. The frontier is the honest product claim — there is
           no single &quot;optimal&quot; dial baked in.
         </p>

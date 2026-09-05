@@ -11,9 +11,9 @@
  *   - a bank is `degraded` if SOME (but not all) of its PSPs have breached,
  *   - a bank is `healthy`  otherwise.
  * "Breached" mirrors the backend's negative-delta threshold on success rate.
- * This is the whole ARIADNE thesis made visible: when Bank-A breaks, psp_1 AND
+ * This is the whole ARIA thesis made visible: when Bank-A breaks, psp_1 AND
  * psp_2 both breach and converge onto one hidden node — a graph-blind monitor
- * only sees "two PSPs down", ARIADNE sees "one bank down".
+ * only sees "two PSPs down", ARIA sees "one bank down".
  */
 import type { Health } from "@/design/ui";
 import type { NodeStat, SimWindow, Topology } from "@/lib";

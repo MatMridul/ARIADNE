@@ -1,5 +1,5 @@
 /**
- * ARIADNE graph node language — NOT stock React Flow boxes.
+ * ARIA graph node language — NOT stock React Flow boxes.
  *
  * Every node reads as a domain OBJECT with an operational state:
  *  - a left STATUS SPINE (color = health) is the primary state channel,

@@ -70,7 +70,7 @@ export function AuditView() {
       <header>
         <h1 className="text-lg font-semibold text-text-primary">Audit Log</h1>
         <p className="mt-1 max-w-3xl text-2xs text-text-muted">
-          Every action ARIADNE takes is bounded and audited — it carries a decision id, the evidence
+          Every action ARIA takes is bounded and audited — it carries a decision id, the evidence
           path that justified it, and a confidence. Pick a scenario to see the audited actions that run
           produced.
         </p>

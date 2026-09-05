@@ -1,5 +1,5 @@
-/** Baseline-vs-ARIADNE mini comparison, from SimulateResponse.comparison.
- * Shows what the graph-blind baseline concluded vs what ARIADNE concluded on
+/** Baseline-vs-ARIA mini comparison, from SimulateResponse.comparison.
+ * Shows what the graph-blind baseline concluded vs what ARIA concluded on
  * the SAME seed — the load-bearing thesis contrast. */
 import { Badge, Card, cn, inr } from "@/design/ui";
 import type { SimulateResponse } from "@/lib";
@@ -71,14 +71,14 @@ export function ComparisonMini({ res }: { res: SimulateResponse }) {
     <Card className="overflow-hidden">
       <div className="border-b border-border-subtle px-4 py-3">
         <h3 className="text-sm font-semibold text-text-primary">
-          ARIADNE vs graph-blind baseline
+          ARIA vs graph-blind baseline
         </h3>
         <p className="mt-0.5 text-2xs text-text-muted">
           Same seed, same observations — only the dependency graph differs.
         </p>
       </div>
       <div className="flex flex-col divide-y divide-border-subtle sm:flex-row sm:divide-x sm:divide-y-0">
-        <Side name="ARIADNE" data={ariadne} accent />
+        <Side name="ARIA" data={ariadne} accent />
         <Side name="Baseline" data={baseline} accent={false} />
       </div>
     </Card>

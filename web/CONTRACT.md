@@ -1,4 +1,4 @@
-# ARIADNE — Web API Contract
+# ARIA — Web API Contract
 
 > **Status:** Design (F0 output). Implement exactly this in a thin FastAPI app
 > (`web/api/`, not yet scaffolded). The API is a **serialization boundary only**:

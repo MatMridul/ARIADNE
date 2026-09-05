@@ -1,4 +1,4 @@
-# ARIADNE — Frontend Stack Decision
+# ARIA — Frontend Stack Decision
 
 > **Status:** Decided (F0 output). Chosen for a ~12-hour sprint that must deliver a
 > high visual ceiling, a living animated dependency graph, and a thin FastAPI seam
@@ -52,7 +52,7 @@ visual ceiling outweigh the missing batteries; Mantine's default look also reads
 "generic dashboard," which the vision explicitly warns against.
 
 ### Graph engine — React Flow (@xyflow/react) over Cytoscape / D3
-The living topology is ARIADNE's visual signature, and the two heaviest requirements
+The living topology is ARIA's visual signature, and the two heaviest requirements
 are **custom node rendering** (health-state PSP/bank/method nodes with pulsing,
 badges, evidence highlighting) and **animated edge traffic** (particles that flow,
 slow, and reroute to carry system semantics). React Flow makes custom nodes ordinary

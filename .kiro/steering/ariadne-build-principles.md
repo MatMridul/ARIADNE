@@ -1,6 +1,6 @@
-# ARIADNE — Build Principles (steering)
+# ARIA — Build Principles (steering)
 
-You are building ARIADNE, an ATLAS-class "Merchant Revenue Recovery Intelligence"
+You are building ARIA, an ATLAS-class "Merchant Revenue Recovery Intelligence"
 system, from a frozen spec. Read `docs/adapter.md` and `docs/BUILD_SPEC.md` — they
 are the contract. These rules apply on **every** turn.
 
@@ -44,7 +44,7 @@ such decision, cut it and note why. Complexity must earn its place.
 
 ## The honesty guards (do not weaken these to get a nicer result)
 
-- The evaluation is written **before** we know whether ARIADNE beats the baseline.
+- The evaluation is written **before** we know whether ARIA beats the baseline.
   A loss on the shared-bank test is a **valid, useful result** — report it, do not
   hide or tune around it.
 - `do_nothing` is a first-class action. Correctly doing nothing on the
@@ -52,7 +52,7 @@ such decision, cut it and note why. Complexity must earn its place.
 - **Report false-intervention cost as loudly as recovery.** Safety metrics are not
   an appendix.
 - The baseline is the **strongest reasonable non-relational alternative**, not a
-  strawman. It sees the same observations ARIADNE sees. It only lacks the graph.
+  strawman. It sees the same observations ARIA sees. It only lacks the graph.
 
 ## Working style
 

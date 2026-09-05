@@ -32,8 +32,8 @@ export function AppShell() {
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
           </div>
           <div className="leading-tight">
-            <div className="text-[13px] font-semibold tracking-tight text-text-primary">ARIADNE</div>
-            <div className="text-[10px] tracking-wide text-text-muted">revenue recovery intelligence</div>
+            <div className="text-[13px] font-semibold tracking-tight text-text-primary">ARIA</div>
+            <div className="text-[10px] tracking-wide text-text-muted">adaptive revenue intelligence &amp; action</div>
           </div>
         </div>
 

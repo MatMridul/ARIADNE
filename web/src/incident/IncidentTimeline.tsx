@@ -136,7 +136,7 @@ export function IncidentTimeline({ res }: { res: SimulateResponse }) {
         {/* 3. Graph reasoning */}
         <Step index={2} title="Graph reasoning — shared dependency" tone="accent">
           <p className="mb-2 text-sm text-text-secondary">
-            ARIADNE walks{" "}
+            ARIA walks{" "}
             <span className="font-mono">attribution.psp_causes</span> up the
             dependency graph to see whether the failing PSPs converge on a shared
             upstream.

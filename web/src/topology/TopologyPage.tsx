@@ -132,7 +132,7 @@ export function TopologyPage() {
         <div className="flex items-center gap-2 border-b border-border-subtle bg-bg-surface/60 px-4 py-1.5 text-2xs text-text-muted">
           <Badge tone="info">thesis</Badge>
           When <span className="text-text-secondary">Bank-A</span> fails, PSP-1 and PSP-2 both
-          breach and converge on one hidden node — ARIADNE sees{" "}
+          breach and converge on one hidden node — ARIA sees{" "}
           <span className="text-text-primary">one bank down</span>, a graph-blind monitor sees two
           independent PSP faults.
         </div>

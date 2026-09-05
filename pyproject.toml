@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ariadne"
 version = "0.1.0"
-description = "ARIADNE — Merchant Revenue Recovery Intelligence (ATLAS-class). Core logic is Python 3.11+ standard library only."
+description = "ARIA — Adaptive Revenue Intelligence & Action (ATLAS-class payment revenue recovery). Core logic is Python 3.11+ standard library only. Package name 'ariadne' is a retained technical identifier."
 requires-python = ">=3.11"
 dependencies = []
 

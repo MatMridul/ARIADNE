@@ -1,5 +1,5 @@
 /**
- * ARIADNE design-system primitives. Pure UI, no data, no API imports.
+ * ARIA design-system primitives. Pure UI, no data, no API imports.
  * Feature folders compose these; they do not restyle from scratch.
  */
 import { clsx, type ClassValue } from "clsx";

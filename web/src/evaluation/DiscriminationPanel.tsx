@@ -1,5 +1,5 @@
 /**
- * The Shared Dependency Discrimination headline: ARIADNE vs the graph-blind
+ * The Shared Dependency Discrimination headline: ARIA vs the graph-blind
  * baseline on the three decisive incidents, plus the four boolean checks as
  * pass/fail chips. Incident A (shared bank) is the hero — baseline ~0.0 there.
  */
@@ -23,7 +23,7 @@ function CheckChip({ label, ok, hint }: { label: string; ok: boolean; hint: stri
   );
 }
 
-/** A horizontal RCA comparison bar: ARIADNE (accent) over baseline (muted). */
+/** A horizontal RCA comparison bar: ARIA (accent) over baseline (muted). */
 function RcaBars({
   ariadne,
   baseline,
@@ -45,7 +45,7 @@ function RcaBars({
   );
   return (
     <div className="space-y-1.5">
-      {row("ARIADNE", ariadne, "bg-accent")}
+      {row("ARIA", ariadne, "bg-accent")}
       {row("Baseline", baseline, "bg-border-strong")}
     </div>
   );
@@ -114,7 +114,7 @@ export function DiscriminationPanel({ d }: { d: Discrimination }) {
           Shared Dependency Discrimination
         </h2>
         <p className="mt-0.5 max-w-3xl text-2xs text-text-muted">
-          The falsifiable test of ARIADNE&apos;s thesis: when two PSPs share one hidden bank, does
+          The falsifiable test of ARIA&apos;s thesis: when two PSPs share one hidden bank, does
           relational reasoning name the bank where a graph-blind baseline sees only two independent
           PSP faults? Every number is measured across the seed batch — no fabricated values.
         </p>
@@ -138,7 +138,7 @@ export function DiscriminationPanel({ d }: { d: Discrimination }) {
           baselineRca={B.baseline.root_cause_accuracy_unconditional}
           ariadneMoney={B.ariadne.money_recovered}
           baselineMoney={B.baseline.money_recovered}
-          caption="Regression guard: when the honest answer is a single PSP, ARIADNE must not do worse than the baseline. Both should blame the one PSP."
+          caption="Regression guard: when the honest answer is a single PSP, ARIA must not do worse than the baseline. Both should blame the one PSP."
         />
         <IncidentCard
           title="Incident E — coincidental"
@@ -147,7 +147,7 @@ export function DiscriminationPanel({ d }: { d: Discrimination }) {
           baselineRca={E.baseline.root_cause_accuracy_unconditional}
           ariadneMoney={E.ariadne.money_recovered}
           baselineMoney={E.baseline.money_recovered}
-          caption="Anti-triviality control. A tie here is the CORRECT signature: ARIADNE must resist over-attributing to a bank when the two failures merely coincide. Winning E would mean it invents false shared causes."
+          caption="Anti-triviality control. A tie here is the CORRECT signature: ARIA must resist over-attributing to a bank when the two failures merely coincide. Winning E would mean it invents false shared causes."
         />
       </div>
 
@@ -157,22 +157,22 @@ export function DiscriminationPanel({ d }: { d: Discrimination }) {
           <CheckChip
             label="A_ariadne_beats_baseline_rca"
             ok={d.A_ariadne_beats_baseline_rca}
-            hint="On the shared-bank case, ARIADNE's root-cause accuracy exceeds the baseline's."
+            hint="On the shared-bank case, ARIA's root-cause accuracy exceeds the baseline's."
           />
           <CheckChip
             label="A_ariadne_beats_baseline_money"
             ok={d.A_ariadne_beats_baseline_money}
-            hint="On the shared-bank case, ARIADNE recovers more money than the baseline."
+            hint="On the shared-bank case, ARIA recovers more money than the baseline."
           />
           <CheckChip
             label="B_no_regression"
             ok={d.B_no_regression}
-            hint="On the single-PSP control, ARIADNE does not regress against the baseline."
+            hint="On the single-PSP control, ARIA does not regress against the baseline."
           />
           <CheckChip
             label="E_ariadne_not_over_attributes"
             ok={d.E_ariadne_not_over_attributes}
-            hint="On the coincidental case, ARIADNE does NOT over-attribute to a shared bank."
+            hint="On the coincidental case, ARIA does NOT over-attribute to a shared bank."
           />
         </div>
       </Card>

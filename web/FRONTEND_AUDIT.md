@@ -1,7 +1,7 @@
-# ARIADNE Frontend — Brutal Design Audit
+# ARIA Frontend — Brutal Design Audit
 
 > Compiled 2026-09-05 by reading every file under `web/src/**`. Judged against
-> `ARIADNE_Product_and_Frontend_Vision.md`. Severity: **P0** = a judge sees it in
+> `ARIA_Product_and_Frontend_Vision.md`. Severity: **P0** = a judge sees it in
 > the first 10 seconds / breaks the "serious product" illusion; **P1** = clearly
 > cheapens it; **P2** = polish. Honest framing: the data wiring and component logic
 > are genuinely good (real API, verbatim evidence, honest negative/do-nothing

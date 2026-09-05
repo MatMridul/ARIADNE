@@ -1,7 +1,7 @@
 """The headline figure (BUILD_SPEC §3.15).
 
 Recovery-vs-risk frontier: x = false_intervention_cost, y = money_recovered, one
-point per intervention threshold, one series for ARIADNE and one for the baseline.
+point per intervention threshold, one series for ARIA and one for the baseline.
 
 matplotlib is used ONLY here (the sole reporting-side exception to stdlib-only).
 Kept isolated so core logic never imports it.
@@ -19,7 +19,7 @@ def plot_frontier(sweep_result: dict, out_path: str) -> None:
     fig, ax = plt.subplots(figsize=(8, 6))
 
     styles = {
-        "ariadne": {"color": "#1f77b4", "marker": "o", "label": "ARIADNE (relational)"},
+        "ariadne": {"color": "#1f77b4", "marker": "o", "label": "ARIA (relational)"},
         "baseline": {"color": "#d62728", "marker": "s", "label": "Baseline (independent)"},
     }
 
@@ -40,7 +40,7 @@ def plot_frontier(sweep_result: dict, out_path: str) -> None:
     ax.set_xlabel("False-intervention cost (lower is safer)")
     ax.set_ylabel("Money recovered across the batch")
     ax.set_title(
-        "ARIADNE — recovery vs. risk frontier\n"
+        "ARIA — recovery vs. risk frontier\n"
         "(the merchant chooses the intervention threshold)"
     )
     ax.legend(loc="best")
@@ -69,7 +69,7 @@ def write_report(sweep_result: dict, out_path: str) -> None:
                 f"{node['root_cause_accuracy_conditional']:.2f} cond")
 
     lines = [
-        "# ARIADNE — run report",
+        "# ARIA — run report",
         "",
         f"Seeds: {sweep_result['seeds']}  |  Thresholds: {sweep_result['thresholds']}",
         "",
@@ -80,23 +80,23 @@ def write_report(sweep_result: dict, out_path: str) -> None:
         "",
         "## Shared Dependency Discrimination result",
         "",
-        "| Incident | Metric | ARIADNE | Baseline |",
+        "| Incident | Metric | ARIA | Baseline |",
         "|----------|--------|---------|----------|",
         f"| A shared-bank | root-cause accuracy (uncond/cond) | {rca_cell(a['ariadne'])} | {rca_cell(a['baseline'])} |",
         f"| A shared-bank | money recovered | {a['ariadne']['money_recovered']:.0f} | {a['baseline']['money_recovered']:.0f} |",
         f"| B single-PSP  | root-cause accuracy (uncond/cond) | {rca_cell(b['ariadne'])} | {rca_cell(b['baseline'])} |",
         f"| E coincidental| root-cause accuracy (uncond/cond) | {rca_cell(e['ariadne'])} | {rca_cell(e['baseline'])} |",
         "",
-        f"- ARIADNE beats baseline on A (unconditional accuracy): **{d['A_ariadne_beats_baseline_rca']}**",
-        f"- ARIADNE beats baseline on A (money): **{d['A_ariadne_beats_baseline_money']}**",
+        f"- ARIA beats baseline on A (unconditional accuracy): **{d['A_ariadne_beats_baseline_rca']}**",
+        f"- ARIA beats baseline on A (money): **{d['A_ariadne_beats_baseline_money']}**",
         f"- No regression on B: **{d['B_no_regression']}**",
         f"- No over-attribution on E: **{d['E_ariadne_not_over_attributes']}**",
         "",
         "### Per-seed variance (unconditional RCA, exposes fragility)",
         "",
-        f"- A ARIADNE per-seed: {a['ariadne']['rca_unconditional_per_seed']}",
+        f"- A ARIA per-seed: {a['ariadne']['rca_unconditional_per_seed']}",
         f"- A baseline per-seed: {a['baseline']['rca_unconditional_per_seed']}",
-        f"- E ARIADNE per-seed: {e['ariadne']['rca_unconditional_per_seed']}",
+        f"- E ARIA per-seed: {e['ariadne']['rca_unconditional_per_seed']}",
         f"- E baseline per-seed: {e['baseline']['rca_unconditional_per_seed']}",
         "",
         "## Recovery-vs-risk frontier + safety (measured, not asserted)",

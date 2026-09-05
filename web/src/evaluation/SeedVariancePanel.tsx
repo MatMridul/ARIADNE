@@ -1,7 +1,7 @@
 /**
  * Seed-aware honesty. The single most important anti-overclaim surface: it shows
  * rca_unconditional_per_seed and money_per_seed as small distributions so the
- * per-seed variance is visible. It explicitly does NOT imply ARIADNE wins every
+ * per-seed variance is visible. It explicitly does NOT imply ARIA wins every
  * seed — ties, near-zero seeds, and negative recoveries are called out.
  */
 import type { Evaluation } from "@/lib";
@@ -44,7 +44,7 @@ function SeedRow({
             values={ariadne.rca_unconditional_per_seed}
             seeds={seeds}
             warnAtOrBelow={0.5}
-            ariaLabel={`${label} ARIADNE root-cause accuracy per seed`}
+            ariaLabel={`${label} ARIA root-cause accuracy per seed`}
             format={(n) => n.toFixed(3)}
           />
           {lowRca > 0 && (
@@ -62,7 +62,7 @@ function SeedRow({
             values={ariadne.money_per_seed}
             seeds={seeds}
             warnAtOrBelow={0}
-            ariaLabel={`${label} ARIADNE money recovered per seed`}
+            ariaLabel={`${label} ARIA money recovered per seed`}
             format={(n) => inr(n)}
           />
           {negSeeds > 0 && (
@@ -84,14 +84,14 @@ export function SeedVariancePanel({ d, seeds }: { d: Evaluation["discrimination"
     <Card>
       <CardHeader
         title="Per-seed honesty"
-        subtitle="Distribution across every seed — ARIADNE does not win every seed, and this shows it"
+        subtitle="Distribution across every seed — ARIA does not win every seed, and this shows it"
       />
       <div className="space-y-3 p-4">
         <SeedRow label="Incident A — shared bank" seeds={seeds} ariadne={d.incident_A_shared_bank.ariadne} baseline={d.incident_A_shared_bank.baseline} />
         <SeedRow label="Incident B — single PSP" seeds={seeds} ariadne={d.incident_B_single_psp.ariadne} baseline={d.incident_B_single_psp.baseline} />
         <SeedRow label="Incident E — coincidental" seeds={seeds} ariadne={d.incident_E_coincidental.ariadne} baseline={d.incident_E_coincidental.baseline} tieExpected />
         <p className="rounded-lg border border-accent/30 bg-accent/5 p-3 text-2xs leading-relaxed text-text-secondary">
-          <strong className="text-text-primary">Honest read:</strong> ARIADNE&apos;s decisive edge is on
+          <strong className="text-text-primary">Honest read:</strong> ARIA&apos;s decisive edge is on
           incident A (shared bank) specifically — that is where relational reasoning reaches a cause the
           baseline structurally cannot. Incident E is an <em>intentional tie</em>: matching the baseline
           there is the correct, non-over-attributing behaviour. Individual seeds vary, and any negative

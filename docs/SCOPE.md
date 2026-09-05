@@ -1,4 +1,4 @@
-# ARIADNE — Minimal Scope Contract (the budget ceiling)
+# ARIA — Minimal Scope Contract (the budget ceiling)
 
 > This is not a wishlist — it is a **ceiling**. If the hostile review or the build
 > surfaces "we need X to be rigorous," X must be sorted into one of the three tiers
@@ -15,7 +15,7 @@ The organizing question for every proposed feature:
 
 ## Tier 1 — REQUIRED for v1 (the thesis + Track 03 bar)
 
-The smallest end-to-end vertical slice that honestly proves ARIADNE's claim. If
+The smallest end-to-end vertical slice that honestly proves ARIA's claim. If
 any of these is missing, the submission does not stand.
 
 - **One merchant**, the 3/3/2 graph (3 methods, 3 PSPs, 2 banks, one bank shared)
@@ -23,16 +23,16 @@ any of these is missing, the submission does not stand.
 - **The five incident types** (A shared-bank, B single-PSP control, C method-level,
   D ambiguous/no-cause, E coincidental-different-banks). Without B/E there is no
   over-attribution check; without D no do-nothing check; without A there is no
-  thesis. **E is required, not optional** — it is what proves ARIADNE reasons over
+  thesis. **E is required, not optional** — it is what proves ARIA reasons over
   topology rather than merely counting correlated failures.
 - **The full loop, end to end:** simulate → aggregate → detect → attribute →
   decide → re-simulate outcome → score.
-- **ARIADNE's relational attribution** (bank blamed via its PSPs) AND **the fair
+- **ARIA's relational attribution** (bank blamed via its PSPs) AND **the fair
   non-relational baseline** seeing the same observations minus the graph. Both must
   exist — the comparison IS the experiment.
 - **`do_nothing` as a first-class action** and at least one real recovery action
   (`reroute_traffic`). Reroute is the minimum that produces measurable recovery.
-- **The Shared Dependency Discrimination result:** ARIADNE beats the baseline on
+- **The Shared Dependency Discrimination result:** ARIA beats the baseline on
   incident A, does not regress on B, AND does not over-attribute on E — measured,
   reported honestly either way.
 - **Money recovered across a batch** (Track 03's bar), computed with the
@@ -68,8 +68,8 @@ inside the hackathon. Explicitly excluded:
 - Multiple merchants, multi-tenant modeling, or org hierarchies.
 - Streaming / real-time ingestion; everything is batch, in-process.
 - Temporal decay of coefficients, moderators/sign-reversal, or the other
-  ATLAS-vision reasoning-layer features (those are ATLAS R&D, not ARIADNE v1).
-- Learning/adaptation: ARIADNE must NOT learn from past incidents within a run
+  ATLAS-vision reasoning-layer features (those are ATLAS R&D, not ARIA v1).
+- Learning/adaptation: ARIA must NOT learn from past incidents within a run
   (that risks the loop teaching itself the answer — see hostile-review surface #6).
 - Auth, persistence, deployment, packaging for distribution.
 

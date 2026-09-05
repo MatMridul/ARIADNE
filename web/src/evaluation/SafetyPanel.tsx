@@ -46,7 +46,7 @@ export function SafetyPanel({ frontier }: { frontier: Evaluation["frontier"] }) 
   return (
     <Card>
       <CardHeader
-        title="Safety metrics (ARIADNE)"
+        title="Safety metrics (ARIA)"
         subtitle="Measured from executed actions — unsafe rate is a rate over a real denominator, not an assertion"
       />
       <div className="overflow-x-auto p-1">

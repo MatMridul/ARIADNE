@@ -1,4 +1,4 @@
-# ATLAS Domain Adapter — ARIADNE (Merchant Revenue Recovery Intelligence)
+# ATLAS Domain Adapter — ARIA (Merchant Revenue Recovery Intelligence)
 
 > This is the filled instantiation of `adapters/TEMPLATE.md` from the ATLAS class
 > repo, for the **merchant payment ecosystem** domain. It is the spine of the
@@ -12,7 +12,7 @@
   revenue to payment failures they cannot see the *cause* of. A drop in success
   rate is visible; *which shared piece of plumbing is actually failing* is not.
 - **Does this app act, or only explain/predict?** **Acts** — but only inside the
-  simulator. ARIADNE selects a bounded recovery action; the simulator produces the
+  simulator. ARIA selects a bounded recovery action; the simulator produces the
   post-intervention transactions so realized money-recovered is measurable. No real
   payment system is ever touched.
 
@@ -24,7 +24,7 @@
 > diagnose and recover revenue more effectively than treating every payment
 > component independently?**
 
-The **shared-bank scenario** is the falsifiable test of that thesis. ARIADNE is
+The **shared-bank scenario** is the falsifiable test of that thesis. ARIA is
 compared against a *fair* non-relational baseline (see §7) that sees the same
 observations but does not know the dependency graph. If the graph does not
 measurably beat the baseline on the shared-dependency case, the thesis fails —
@@ -32,9 +32,9 @@ and we report that honestly.
 
 **Both outcomes are valid engineering results:**
 
-- **If ARIADNE wins** on the shared-bank case → the map mattered; modeling the
+- **If ARIA wins** on the shared-bank case → the map mattered; modeling the
   relationships enabled a diagnosis and recovery the baseline could not reach.
-- **If ARIADNE does not win** → we learned the map did not add enough information
+- **If ARIA does not win** → we learned the map did not add enough information
   to justify its complexity. That is genuine, publishable engineering knowledge,
   not a failure to hide.
 
@@ -83,11 +83,11 @@ build:
 | Event | Timestamp | Source | Affected entities | State change | Evidence |
 |-------|-----------|--------|-------------------|--------------|----------|
 | TransactionOutcome | yes | simulator | Transaction (+ its method/psp/bank by path) | none directly — it's the raw signal | the transaction record itself (status, failure_code, latency) |
-| WindowSnapshot (derived) | window end | ARIADNE aggregator | PaymentMethod, PaymentCompany, Bank | updates derived health/success-rate per node | the set of TransactionOutcomes in the window |
-| RecoveryActionApplied | yes | ARIADNE | PaymentMethod / `routed_through` edge | flips method enabled/disabled, or reweights routing | the decision + its evidence path |
+| WindowSnapshot (derived) | window end | ARIA aggregator | PaymentMethod, PaymentCompany, Bank | updates derived health/success-rate per node | the set of TransactionOutcomes in the window |
+| RecoveryActionApplied | yes | ARIA | PaymentMethod / `routed_through` edge | flips method enabled/disabled, or reweights routing | the decision + its evidence path |
 | OutcomeObserved (post-action) | yes | simulator | Transaction | new transactions under the changed config | post-intervention transaction set |
 
-> ARIADNE ingests only `TransactionOutcome`s. Everything about node health is
+> ARIA ingests only `TransactionOutcome`s. Everything about node health is
 > **derived** — this keeps observed vs. inferred cleanly separated (DESIGN_PRINCIPLES §4).
 
 ## 4. Query intents
@@ -121,7 +121,7 @@ build:
 
 ## 6. Action policies
 
-ARIADNE acts inside the simulator. The **intervention threshold** is not a fixed
+ARIA acts inside the simulator. The **intervention threshold** is not a fixed
 number — it is an explicit **risk-appetite dial** swept by the evaluation (§7).
 
 | Action | Required confidence | Authorization | Max scope/impact | Stopping rule | Rollback | Audit fields |
@@ -141,23 +141,23 @@ number — it is an explicit **risk-appetite dial** swept by the evaluation (§7
 - **Ground truth source:** a **payment-ecosystem simulator** that generates
   transactions (amount, method, psp, bank, status, failure_code, latency, cohort,
   geography, volume) and **injects known causal incidents** so root cause is
-  labeled. **Honest-adversary requirements:** the diagnoser (ARIADNE) never reads
+  labeled. **Honest-adversary requirements:** the diagnoser (ARIA) never reads
   the simulator's injected ground-truth parameters; the simulator adds realistic
   noise, base-rate variation, and overlapping/ambiguous failures; and it includes
-  incidents ARIADNE should *not* get a clean shot at (incident D). "Unknown >
+  incidents ARIA should *not* get a clean shot at (incident D). "Unknown >
   fabricated" — the simulator never hands the reasoner a coefficient.
 
 - **The four injected incident types:**
   - **A — shared-bank degradation** (the hero / thesis test): one bank's approval
     rate drops; failures surface across *every* PSP that settles via it.
-  - **B — single-PSP outage** (control): one PSP fails alone; tests that ARIADNE
+  - **B — single-PSP outage** (control): one PSP fails alone; tests that ARIA
     does **not** over-attribute to the bank.
   - **C — method-level fault**: e.g. UPI collect timeouts spike independently.
   - **D — ambiguous / no real cause**: a random noise dip with no injected
     incident; the correct answer is `do_nothing`.
 
 - **The fair non-relational baseline (hard requirement):** an "independent
-  monitoring" system that receives the **same observations** as ARIADNE —
+  monitoring" system that receives the **same observations** as ARIA —
   per-PSP metrics, per-method metrics, historical baselines, current failure
   rates, latency, transaction volume — and monitors each component
   independently. The **only** thing it lacks is the dependency graph. This makes
@@ -166,10 +166,10 @@ number — it is an explicit **risk-appetite dial** swept by the evaluation (§7
   non-relational alternative*, not a strawman.
 
 - **Shared Dependency Discrimination Test (the thesis, made falsifiable):**
-  ARIADNE must demonstrate **measurable improvement over the fair baseline on
+  ARIA must demonstrate **measurable improvement over the fair baseline on
   incident A specifically** — where multiple observable failures share a hidden
   upstream dependency. On incident B it must match the baseline (not regress). If
-  ARIADNE does not beat the baseline on A, the relational thesis is not supported,
+  ARIA does not beat the baseline on A, the relational thesis is not supported,
   and that is reported plainly. *(This principle is proposed for promotion into
   the ATLAS class eval principles — see DR-002 below.)*
 
@@ -187,7 +187,7 @@ number — it is an explicit **risk-appetite dial** swept by the evaluation (§7
   across a sweep of intervention thresholds (e.g. 0.55 / 0.70 / 0.85) and plot
   **recovery vs. false-intervention cost**. The product claim is not "we chose the
   optimal threshold" but "here is the frontier; the merchant chooses how
-  aggressive ARIADNE should be."
+  aggressive ARIA should be."
 
 ## 8. Open questions / UNKNOWNs
 
@@ -197,16 +197,16 @@ number — it is an explicit **risk-appetite dial** swept by the evaluation (§7
 > remain open, and both are build-time *tuning* choices (pick sensible values,
 > document them) — neither is an architecture decision that should stall the build.
 
-1. **Attribution scoring function — exact form. RESOLVED (ARIADNE DR-001, Accepted;
+1. **Attribution scoring function — exact form. RESOLVED (ARIA DR-001, Accepted;
    BUILD_SPEC §3.8).** Pinned to `confidence = coverage × specificity`, blame the
    bank when `coverage == 1.0` and `specificity ≥ S_MIN` (start 0.8), else
    independent PSPs / method / none. This is what separates incident A from the
    coincidental incident E.
-2. **Baseline's own decision rule. RESOLVED (ARIADNE DR-001, decision C1).** The
+2. **Baseline's own decision rule. RESOLVED (ARIA DR-001, decision C1).** The
    baseline also *acts*, using the same action menu driven by its per-node view, so
    money-recovered is an apples-to-apples head-to-head. It receives identical raw
    observations; it only lacks the graph.
-3. **How many PSPs / banks / methods in v1. RESOLVED (ARIADNE DR-001, decision
+3. **How many PSPs / banks / methods in v1. RESOLVED (ARIA DR-001, decision
    A1).** 3 methods, 3 PSPs, 2 banks — bank_A shared by PSP-1 & PSP-2, bank_B on
    PSP-3. Residual-risk note (in DR-001): if this proves too small to make the win
    non-trivial once measured, revisit via a new superseding DR.

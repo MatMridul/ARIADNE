@@ -1,5 +1,5 @@
 /**
- * ARIADNE API contract — Zod schemas + inferred TypeScript types.
+ * ARIA API contract — Zod schemas + inferred TypeScript types.
  *
  * SINGLE source of truth for the API shape (web/CONTRACT.md). Every feature folder
  * imports types + hooks from `@/lib` and NOTHING defines API types or calls fetch

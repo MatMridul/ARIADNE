@@ -1,5 +1,5 @@
 /**
- * Semantic-motion traffic edge — ARIADNE's visual signature.
+ * Semantic-motion traffic edge — ARIA's visual signature.
  *
  * Traffic "particles" flow from source to target along the edge path using SVG
  * <animateMotion> (GPU-friendly, declarative, NO per-frame requestAnimationFrame

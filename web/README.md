@@ -1,6 +1,6 @@
-# ARIADNE Web
+# ARIA Web
 
-The operator-console frontend for ARIADNE and the thin FastAPI layer that wraps the
+The operator-console frontend for ARIA and the thin FastAPI layer that wraps the
 Python core. See `../docs/frontend-stack-decision.md` for why this stack, and
 `./CONTRACT.md` for the exact API shapes (build against that file).
 
@@ -19,7 +19,7 @@ Python core. See `../docs/frontend-stack-decision.md` for why this stack, and
 - Windows/PowerShell friendly (no bash-only constructs)
 
 ## Run — development (two processes, live reload)
-Backend (from repo root `C:\Mridul\Programs\ARIADNE`):
+Backend (from repo root `C:\Mridul\Programs\ARIA`):
 ```powershell
 pip install -e .
 pip install fastapi "uvicorn[standard]"
@@ -81,7 +81,7 @@ web/
                         traffic edges, semantic motion, dependency highlighting. Owner: topology agent.
     incident/           incident/command-center experience (F3+F5): state->topology->diagnosis
                         ->action->outcome, evidence panel, confidence, recovery console. Owner: incident agent.
-    evaluation/         evaluation view (F7): ARIADNE vs baseline, frontier chart (Recharts),
+    evaluation/         evaluation view (F7): ARIA vs baseline, frontier chart (Recharts),
                         per-seed variance, safety metrics. Owner: evaluation agent.
     pages/              route-level page compositions that assemble the above feature folders.
                         Owner: shell agent (thin; delegates to feature folders).

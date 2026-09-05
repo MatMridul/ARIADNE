@@ -1,4 +1,4 @@
-# ARIADNE — Build Order (the Haiku session follows this literally)
+# ARIA — Build Order (the Haiku session follows this literally)
 
 > Read `docs/adapter.md`, `docs/BUILD_SPEC.md`, `docs/SCOPE.md`, and both
 > `.kiro/steering/*.md` first. Then work these steps IN ORDER. Do not skip ahead,
@@ -59,8 +59,8 @@
     multiple independent PSP faults, never a bank (proves the gap exists); on the
     coincidental (E) window the baseline is correct (independent PSPs).
 17. Extend `eval/run.py` to run BOTH systems and produce the discrimination result:
-    ARIADNE beats baseline on incident A, does not regress on B, and does not
-    over-attribute on E (the A-vs-E contrast isolates ARIADNE's real advantage).
+    ARIA beats baseline on incident A, does not regress on B, and does not
+    over-attribute on E (the A-vs-E contrast isolates ARIA's real advantage).
 
 ## Phase 6 — widen to the full batch + frontier
 18. `eval/scenarios.py` — the batch mixing A/B/C/D/E + clean windows.
@@ -75,7 +75,7 @@
 
 ## Definition of done
 Run the full suite green, produce the frontier PNG, and confirm every box in
-BUILD_SPEC §6. If the discrimination test does NOT favor ARIADNE, report that
+BUILD_SPEC §6. If the discrimination test does NOT favor ARIA, report that
 honestly — it is a valid result, not a bug to hide.
 
 ## Stop conditions (surface to the human, don't improvise)

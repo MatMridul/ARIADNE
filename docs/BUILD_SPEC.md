@@ -1,7 +1,7 @@
-# ARIADNE — Build Spec (microscopic)
+# ARIA — Build Spec (microscopic)
 
 > This is the implementation contract. A build session should be able to produce
-> ARIADNE from this file with near-zero judgment calls. It implements
+> ARIA from this file with near-zero judgment calls. It implements
 > [`adapter.md`](adapter.md). Where a choice is still open, this spec makes the
 > smallest reasonable decision and marks it `[DECISION → DR]`.
 >
@@ -34,7 +34,7 @@
 7. **No cross-incident learning in v1 (hostile-review fix #6).** Each incident is
    diagnosed ONLY from its own window's observations. The diagnoser keeps NO state
    across incidents and does not adapt from past incidents' outcomes within a run.
-   This closes the "feedback loop teaches itself the answer" hole: nothing ARIADNE
+   This closes the "feedback loop teaches itself the answer" hole: nothing ARIA
    sees about how an incident resolved is allowed to feed back into how it diagnoses
    the next one. (Adaptation/learning is explicitly Tier 3 / out of scope — SCOPE.md.)
 
@@ -43,7 +43,7 @@
 ## 2. Repository layout
 
 ```
-ARIADNE/
+ARIA/
 ├── README.md
 ├── docs/
 │   ├── adapter.md              # the domain adapter (done)
@@ -61,7 +61,7 @@ ARIADNE/
 │   │   └── engine.py
 │   ├── observe/                # aggregation of raw txns → window snapshots
 │   │   └── aggregate.py
-│   ├── diagnosis/              # ARIADNE's relational reasoning
+│   ├── diagnosis/              # ARIA's relational reasoning
 │   │   ├── detect.py
 │   │   └── attribute.py
 │   ├── baseline/               # the fair non-relational alternative
@@ -204,9 +204,9 @@ class GroundTruth:
 > with no real reasoning. E is the case where two PSPs drop together but sit on
 > *different* banks — so the correct answer is two independent PSP faults. Only a
 > system that actually reasons over the topology (not one that counts correlated
-> failures) gets both A and E right. ARIADNE must distinguish A (one shared bank)
+> failures) gets both A and E right. ARIA must distinguish A (one shared bank)
 > from E (two coincidental independent faults); the baseline naturally treats both
-> as independent PSP faults — so E is where ARIADNE must NOT over-attribute to a
+> as independent PSP faults — so E is where ARIA must NOT over-attribute to a
 > bank, the mirror of B.
 
 ### 3.5 `simulator/engine.py`
@@ -250,16 +250,16 @@ class NodeStats:
 
 def window_stats(txns: list[Transaction], graph: PaymentGraph,
                  window: int) -> dict[str, NodeStats]:
-    """Aggregate one window into per-PSP and per-method stats (both ARIADNE and the
-    baseline get these). Bank-level stats are DERIVED by ARIADNE only, in diagnosis."""
+    """Aggregate one window into per-PSP and per-method stats (both ARIA and the
+    baseline get these). Bank-level stats are DERIVED by ARIA only, in diagnosis."""
 ```
 
-> **Identical raw inputs (hostile-review fix #3).** ARIADNE and the baseline receive
+> **Identical raw inputs (hostile-review fix #3).** ARIA and the baseline receive
 > the *exact same* `NodeStats` for PSPs and methods — the same rates, baselines,
-> latency, and volume. ARIADNE's bank-level health is **computed by ARIADNE from
+> latency, and volume. ARIA's bank-level health is **computed by ARIA from
 > those same PSP-level inputs** via the graph; it is NOT an extra observation handed
-> to ARIADNE and withheld from the baseline. The only difference between the two
-> systems is that ARIADNE holds the dependency graph and the baseline does not. No
+> to ARIA and withheld from the baseline. The only difference between the two
+> systems is that ARIA holds the dependency graph and the baseline does not. No
 > other input differs. This is what keeps the comparison a clean controlled
 > experiment — relational reasoning vs. independent monitoring, nothing else.
 
@@ -273,7 +273,7 @@ class Detection:
     window: int
 
 def detect(stats: dict[str, NodeStats], detect_threshold: float) -> Detection:
-    """Deterministic threshold on delta vs. baseline. Shared by ARIADNE and baseline."""
+    """Deterministic threshold on delta vs. baseline. Shared by ARIA and baseline."""
 ```
 
 ### 3.8 `diagnosis/attribute.py` — the core relational reasoning
@@ -281,7 +281,7 @@ def detect(stats: dict[str, NodeStats], detect_threshold: float) -> Detection:
 ```python
 @dataclass
 class Attribution:
-    root_cause_id: str          # the node ARIADNE blames (may be a bank)
+    root_cause_id: str          # the node ARIA blames (may be a bank)
     root_cause_kind: str        # "bank" | "psp" | "method" | "none"
     confidence: float           # 0..1
     evidence_path: list[str]    # the observations/edges supporting it
@@ -434,7 +434,7 @@ def plot_frontier(sweep_result: dict, out_path: str) -> None:
 
 ```
 simulator.generate → observe.aggregate → diagnosis.detect
-   → diagnosis.attribute (ARIADNE)  |  baseline.baseline_attribute (baseline)
+   → diagnosis.attribute (ARIA)  |  baseline.baseline_attribute (baseline)
    → decide.select_action (uses intervention_threshold)
    → simulator re-run affected windows under the action → observe outcome
    → eval.metrics (scored against GroundTruth)
@@ -447,15 +447,15 @@ simulator.generate → observe.aggregate → diagnosis.detect
 - `test_simulator.py`: same seed → identical txns; a SHARED_BANK incident actually
   lowers success across all PSPs on that bank and nowhere else.
 - `test_attribute.py`: **the thesis test in miniature** — on a synthetic
-  shared-bank window ARIADNE returns `root_cause_kind == "bank"`; on a single-PSP
+  shared-bank window ARIA returns `root_cause_kind == "bank"`; on a single-PSP
   window it returns `"psp"` (no over-attribution); on a noise window it returns
   `"none"`; **on a COINCIDENTAL window (two PSPs on different banks down together)
-  it returns two INDEPENDENT PSP causes, NOT a bank** — proving ARIADNE reasons over
+  it returns two INDEPENDENT PSP causes, NOT a bank** — proving ARIA reasons over
   topology rather than merely counting correlated failures.
 - `test_baseline.py`: on the same shared-bank window the baseline returns multiple
   independent PSP faults (never a bank) — proving the discrimination gap exists;
   on the coincidental window the baseline is CORRECT (independent PSPs), so the
-  A-vs-E contrast is exactly what isolates ARIADNE's real advantage.
+  A-vs-E contrast is exactly what isolates ARIA's real advantage.
 - `test_policy.py`: below threshold → do_nothing; never disables the last method;
   never reroutes onto a bad node.
 - `test_metrics.py`: money_recovered and false_intervention_cost compute correctly
@@ -480,7 +480,7 @@ simulator.generate → observe.aggregate → diagnosis.detect
 
 ## 7. Open decisions carried into DRs
 
-- **DR-001 (ARIADNE design):** graph size (3/3/2), exact attribution scoring form,
+- **DR-001 (ARIA design):** graph size (3/3/2), exact attribution scoring form,
   and whether the baseline also acts (recommended: yes, for apples-to-apples
   money-recovered).
 - **DR-002 (ATLAS class):** promote the Shared Dependency Discrimination Test into

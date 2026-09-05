@@ -1,6 +1,6 @@
 /** Incident / RCA / Recovery experience (F3+F5).
  * The incident story as a stepped timeline driven by a live useSimulate() trace,
- * with a recovery console and a baseline-vs-ARIADNE comparison. The operator
+ * with a recovery console and a baseline-vs-ARIA comparison. The operator
  * picks incident type + seed + intervention threshold and re-runs. */
 import { useMemo, useState } from "react";
 import { Badge, Card, CardHeader } from "@/design/ui";

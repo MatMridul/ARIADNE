@@ -1,4 +1,4 @@
-# ARIADNE Frontend Reconnaissance
+# ARIA Frontend Reconnaissance
 
 > **Purpose:** repository truth-gathering for a separate design/spec phase. This is
 > **read-only recon** — no redesign, no features, no backend/eval/API/dependency
@@ -169,10 +169,10 @@ Viewport captured at **1440×900**. In-app navigation used (sidebar links) becau
 
 ### `/incidents` — Incidents & RCA — `incident/IncidentExperience.tsx` → `03-incidents-rca.png`
 - **Layout:** `max-w-6xl`. Controls `Card` (incident type pills, seed, risk-dial pills, expected-behaviour box, simulated disclosure) → 2-col `[1fr_360px]`: left = `IncidentTimeline` (6-step vertical spine), right = `RecoveryConsole` + `ComparisonMini`.
-- **Regions/components:** `ScenarioControls` (incident-owned variant), `IncidentTimeline` steps 1–6 (Healthy → Degradation → Graph reasoning → Attribution → Decision → Outcome), `ConfidenceRing`, `EvidencePath`, `RecoveryConsole` (Execute / Do-nothing buttons + reveal), `ComparisonMini` (ARIADNE vs baseline side-by-side).
+- **Regions/components:** `ScenarioControls` (incident-owned variant), `IncidentTimeline` steps 1–6 (Healthy → Degradation → Graph reasoning → Attribution → Decision → Outcome), `ConfidenceRing`, `EvidencePath`, `RecoveryConsole` (Execute / Do-nothing buttons + reveal), `ComparisonMini` (ARIA vs baseline side-by-side).
 - **Charts/motion:** ConfidenceRing; each step `whileInView` entrance; RecoveryConsole `AnimatePresence` reveal.
 - **Interaction:** change incident/seed/threshold (re-runs); Execute/Do-nothing toggle.
-- **Live observation:** **strongest surface.** Timeline reads as a real story; ComparisonMini shows ARIADNE → Bank-A (bank) vs baseline → PSP-1 (psp) on the same seed — the thesis made explicit. Note: both sides show `money recovered ₹2,60,137` (the comparison money-per-side can read as "baseline recovered the same" — a labeling nuance for the design phase, not a data bug).
+- **Live observation:** **strongest surface.** Timeline reads as a real story; ComparisonMini shows ARIA → Bank-A (bank) vs baseline → PSP-1 (psp) on the same seed — the thesis made explicit. Note: both sides show `money recovered ₹2,60,137` (the comparison money-per-side can read as "baseline recovered the same" — a labeling nuance for the design phase, not a data bug).
 
 ### `/evaluation` — Evaluation — `evaluation/EvaluationView.tsx` → `04-evaluation-loading-defect.png`
 - **Intended layout (from code):** `max-w-6xl` header → sweep summary line → `DiscriminationPanel` (3 incident cards + 4 pass/fail chips) → `FrontierPanel` (Recharts recovery-vs-cost) → `SafetyPanel` (per-threshold table) → `SeedVariancePanel` (per-seed sparklines).
@@ -288,13 +288,13 @@ Files: `topology/{PaymentGraph, TopologyPage, nodes, edges, types, layout, build
 
 ## H. PLAYWRIGHT VERIFICATION
 
-Server: `http://127.0.0.1:8000` (FastAPI + built SPA, one origin). Viewport 1440×900. Screenshots copied to `C:\Mridul\Programs\ARIADNE\artifacts\frontend-recon\`.
+Server: `http://127.0.0.1:8000` (FastAPI + built SPA, one origin). Viewport 1440×900. Screenshots copied to `C:\Mridul\Programs\ARIA\artifacts\frontend-recon\`.
 
 | # | Route | How reached | Result | Screenshot |
 |---|---|---|---|---|
 | 1 | `/` Command Center | direct load | OK — dashed graph placeholder confirmed live | `01-command-center.png` |
 | 2 | `/topology` | in-app click | OK — real React Flow graph, SHARED Bank-A, emoji merchant, all-green at window 1 | `02-topology.png` |
-| 3 | `/incidents` | in-app click | OK — 6-step timeline + ComparisonMini (ARIADNE→Bank-A vs baseline→PSP-1) | `03-incidents-rca.png` |
+| 3 | `/incidents` | in-app click | OK — 6-step timeline + ComparisonMini (ARIA→Bank-A vs baseline→PSP-1) | `03-incidents-rca.png` |
 | 4 | `/evaluation` | in-app click | **DEFECT** — infinite "Running evaluation sweep…" spinner (>10 min, never resolved) | `04-evaluation-loading-defect.png` |
 | 5 | `/audit` | in-app click | OK — derived-from-run banner, native selects, formatted param chips | `05-audit-log.png` |
 | 6 | `/topology` (hard-nav) | direct URL | **DEFECT** — HTTP 404 (no SPA fallback) | `06-defect-hardnav-404.png` |
