@@ -1,1 +1,1 @@
-export { TopologyPage } from "./placeholders";
+export { TopologyPage } from "@/topology/TopologyPage";
